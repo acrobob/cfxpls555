@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>流道与 UnitsCount 模拟</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: 参数 → 动画（左投入 → Sequence 工序列 → 右产出，每列内为并行 Stage）→ 统计与 Transaction 纪录 */
+:root{
+  --bg:#ffffff; --panel:#f7f8fa; --line:#d5d9e0; --fg:#1f2430; --muted:#6b7280;
+  --accent:#1d5fbf; --track:#e3e6eb; --machine:#f2f4f7;
+  --unit:#e0a526; --unit-done:#2e9e5b; --tray:#5b6472; --proc:#1d5fbf; --block:#c77a12; --bad:#c2410c;
+  --ev-ua:#0f8b8d; --ev-ws:#1d5fbf; --ev-ss:#6d4fe0; --ev-sc:#9b86f0; --ev-wc:#2e9e5b; --ev-ud:#b5487a; --topic:#0a73c9; --topic-bd:#08518f;
+  --font: "PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#14171c; --panel:#1b1f26; --line:#353b47; --fg:#e6e8ec; --muted:#9aa1ad;
+  --accent:#5b9cf0; --track:#262b34; --machine:#20252e;
+  --unit:#e8b440; --unit-done:#44c07a; --tray:#8a93a3; --proc:#5b9cf0; --block:#e0a040; --bad:#f08a5d; --ev-ua:#34b3b5; --ev-ws:#5b9cf0; --ev-ss:#9d85ff; --ev-sc:#c4b5fd; --ev-wc:#44c07a; --ev-ud:#e07aa8; --topic:#2f86d6; --topic-bd:#8cc2f0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14171c; --panel:#1b1f26; --line:#353b47; --fg:#e6e8ec; --muted:#9aa1ad;
+  --accent:#5b9cf0; --track:#262b34; --machine:#20252e;
+  --unit:#e8b440; --unit-done:#44c07a; --tray:#8a93a3; --proc:#5b9cf0; --block:#e0a040; --bad:#f08a5d; --ev-ua:#34b3b5; --ev-ws:#5b9cf0; --ev-ss:#9d85ff; --ev-sc:#c4b5fd; --ev-wc:#44c07a; --ev-ud:#e07aa8; --topic:#2f86d6; --topic-bd:#8cc2f0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px}
+.wrap{max-width:1800px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:20px;margin:0;font-weight:600;text-wrap:balance}
+.sub{color:var(--muted);margin:6px 0 0;font-size:13px;line-height:1.7;max-width:110ch}
+.sub b{color:var(--fg);font-weight:600}
+.box{border:1px solid var(--line);border-radius:4px;background:var(--bg)}
+.controls{display:flex;flex-wrap:wrap;gap:14px 24px;padding:14px 16px;background:var(--panel);align-items:flex-end}
+.ctl{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ctl>label,.ctl>.lab{font-size:12px;color:var(--muted);letter-spacing:.03em}
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;width:max-content}
+.seg button{border:0;border-right:1px solid var(--line);background:var(--bg);color:var(--fg);
+  min-width:32px;height:30px;font:600 13px var(--mono);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.seg button:focus-visible,.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{width:130px;accent-color:var(--accent)}
+.sel{height:30px;min-width:84px;padding:0 8px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg);font:600 13px var(--mono);cursor:pointer}
+.sel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.val{font:600 12px var(--mono);font-variant-numeric:tabular-nums;color:var(--fg)}
+.btns{display:flex;gap:8px;margin-left:auto}
+.btn{height:30px;padding:0 14px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg);font:13px var(--font);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.seqs{display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px;border-top:1px solid var(--line)}
+.seqcard{border:1px solid var(--line);border-radius:4px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;background:var(--bg)}
+.seqcard h3{margin:0;font-size:13px;font-weight:600;width:100%}
+.seqcard h3 span{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
+.txbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 16px;border-top:1px solid var(--line);font-size:13px}
+.chip{font:600 12px var(--mono);border:1px solid var(--accent);color:var(--accent);border-radius:3px;padding:2px 8px}
+.stage{padding:8px}
+.stage>.controls{margin:-8px -8px 0;border-radius:4px 4px 0 0;border-bottom:1px solid var(--line)}
+.stage>.stepbar{margin:0 -8px 8px;border-top:0;border-bottom:1px solid var(--line)}
+.box>.eqcfg:first-child{border-top:0}
+.canvas-wrap{overflow-x:auto}
+canvas{display:block;width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;padding:8px 6px 2px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.legend i.o{background:transparent;border:2px solid}
+.legend i.st{width:12px;height:12px;box-sizing:border-box;border:2px solid var(--c);padding:2px;background:var(--c);background-clip:content-box;border-radius:3px}
+.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}
+@media (max-width:760px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
+.panel{min-width:0}
+.panel h2{font-size:13px;font-weight:600;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.formula{padding:12px 14px;font-size:13px;line-height:1.75;border-bottom:1px solid var(--line)}
+.formula b{font-family:var(--mono)}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:500;color:var(--muted);font-size:12px}
+.tag{font-size:11px;color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:0 5px;margin-left:6px}
+tfoot td{font-weight:600}
+.log{list-style:none;margin:0;padding:6px 0;font:12px/1.55 var(--mono);max-height:300px;overflow:auto}
+.log li{padding:5px 14px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.log li:last-child{border-bottom:0}
+.log .t{color:var(--muted);margin-right:8px}
+.log .id{color:var(--accent);font-weight:600}
+.log .empty{color:var(--muted);font-family:var(--font)}
+.cfx summary{cursor:pointer;font-size:14px;font-weight:600;padding:12px 16px;background:var(--panel);border-radius:4px;list-style-position:inside}
+.cfx[open] summary{border-bottom:1px solid var(--line);border-radius:4px 4px 0 0}
+.cfx summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cfx-body{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;padding:16px}
+@media (max-width:760px){.cfx-body{grid-template-columns:1fr}}
+.cfx-body>div{min-width:0;font-size:13px;line-height:1.75}
+.cfx-body h3{font-size:13px;margin:0 0 6px;font-weight:600}
+.cfx-body p{margin:0 0 12px}
+.cfx-body ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.flow{font:600 12px var(--mono);border:1px solid var(--line);border-radius:4px;padding:8px 10px;margin-bottom:12px;background:var(--panel);overflow-wrap:anywhere}
+.def{border-collapse:collapse;width:100%;margin-bottom:12px}
+.def td{text-align:left;white-space:normal;vertical-align:top;padding:6px 8px}
+.def td:first-child{font-family:var(--mono);font-weight:600;white-space:nowrap;color:var(--accent)}
+.def q{color:var(--muted);font-style:italic}
+code{font-family:var(--mono);font-size:12px}
+pre.json{margin:0;padding:12px;border:1px solid var(--line);border-radius:4px;background:var(--panel);font:12px/1.5 var(--mono);overflow-x:auto;color:var(--fg)}
+.src{font-size:12px;color:var(--muted);margin-top:10px}
+.src a{color:var(--accent)}
+.dgwrap{overflow-x:auto;padding:12px 16px 4px}
+.cfxdg{display:block;width:100%;min-width:1000px;height:auto;font-family:var(--font)}
+.cfxdg rect{stroke-width:1.2}
+.dg-ph{fill:color-mix(in srgb,var(--block) 16%,var(--bg));stroke:var(--block)}
+.dg-tx{fill:color-mix(in srgb,var(--ev-ws) 16%,var(--bg));stroke:var(--ev-ws)}
+.dg-st{fill:color-mix(in srgb,var(--ev-ss) 16%,var(--bg));stroke:var(--ev-ss)}
+.dg-nt{fill:color-mix(in srgb,var(--unit) 12%,var(--bg));stroke:var(--unit)}
+.dg-txc{fill:color-mix(in srgb,var(--ev-ws) 5%,var(--bg));stroke:var(--ev-ws)}
+.dg-mc{fill:var(--panel);stroke:var(--line)}
+.dg-pl{fill:var(--bg);stroke:var(--line)}
+.dg-sep{stroke:var(--line)}
+.dg-edge{fill:none;stroke:var(--muted);stroke-width:1.5}
+.dg-arrow{fill:var(--muted)}
+.dg-num{fill:var(--bg);stroke:var(--muted)}
+.dg-numt,.dg-fg{fill:var(--fg)}
+.dg-lbl{fill:var(--bg)}
+.dg-muted{fill:var(--muted)}
+.dg-red{stroke:var(--bad)}
+.dg-redf,.dg-redt{fill:var(--bad)}
+.dgsrc{padding:0 16px 12px;margin:0}
+
+.cfx-wrap{padding:16px;display:flex;flex-direction:column;gap:12px}
+.cfx-wrap>.flow{margin:0}
+.cfx-wrap h3{font-size:13px;margin:0;font-weight:600}
+.cfx-wrap .cfx-body{padding:0}
+.cmpwrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px}
+table.cmp{min-width:820px;font-size:12px;line-height:1.6}
+.cmp th,.cmp td{text-align:left;white-space:normal;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+.cmp tbody tr:last-child>*{border-bottom:0}
+.cmp thead th{font:600 12px var(--mono);color:var(--accent);background:var(--panel);width:22%}
+.cmp thead th:first-child{width:12%}
+.cmp tbody th{font:600 12px var(--mono);color:var(--fg);background:var(--panel)}
+.cmp q{color:var(--muted);font-style:italic}
+.na{color:var(--muted)}
+.opt{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 4px;color:var(--muted)}
+.hdr{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.hdr-txt{min-width:0}
+.cfgbtn{display:inline-flex;align-items:center;gap:6px;flex:none}
+.hdr-act{display:flex;gap:8px;align-items:center;flex:none}
+.langseg button{min-width:44px;font:600 12px var(--font)}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(10,14,20,.45);display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal[hidden]{display:none}
+.dlg{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;width:100%;max-width:640px;display:flex;flex-direction:column}
+.dlg.sm{max-width:360px;margin-top:10vh}
+.dlg h2{margin:0;font-size:15px;font-weight:600;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.dlg-body{padding:16px;display:flex;flex-direction:column;gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:12px;color:var(--muted)}
+.fld input,.fld textarea{font:13px/1.6 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;width:100%;box-sizing:border-box}
+.fld textarea{resize:vertical;min-height:64px}
+.hint{font-size:12px;color:var(--muted);margin:0;line-height:1.6}
+.err{font-size:12px;color:var(--bad);margin:0;min-height:1em}
+.ok{font-size:12px;color:var(--unit-done);margin:0}
+.dlg-foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)}
+.dlg-foot .left{margin-right:auto}
+fieldset{border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin:0;display:flex;flex-direction:column;gap:8px}
+legend{font-size:12px;color:var(--muted);padding:0 4px}
+.eqtabs{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px 0;border-top:1px solid var(--line)}
+.tab{border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg);padding:5px 10px;font:600 13px var(--font);cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.tab{position:relative}
+.btag{position:absolute;top:-8px;right:-6px;font-size:10px;font-weight:600;line-height:14px;background:var(--bg);color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:0 4px}
+.tab small{font-weight:400;font-size:11px;color:var(--muted)}
+.tab[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eqtabs+.seqs{border-top:0;align-items:flex-end}
+.eqcfg{border-top:1px solid var(--line)}
+.eqcfg summary{cursor:pointer;padding:10px 16px;font-size:13px;font-weight:600;display:flex;gap:10px;align-items:baseline}
+.eqcfg summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+.eqcfg[open] summary::before{transform:rotate(90deg)}
+.eqcfg summary::-webkit-details-marker{display:none}
+.eqcfg summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.sumtxt{font-weight:400;color:var(--muted);font-size:12px}
+.eqtop{padding:4px 16px 0}
+.eqtop .ctl{align-items:flex-start}
+.eqhead{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;width:100%}
+.eqcfg .eqtabs{border-top:0}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+.kpis div{padding:10px 14px;display:flex;flex-direction:column;gap:2px;background:var(--bg);min-width:0}
+.genbody{display:flex;flex-wrap:wrap;gap:14px 24px;padding:4px 16px 12px;align-items:flex-end}
+.seg.wide button{padding:0 10px;font:600 12px var(--font)}
+.seg button:disabled,input[type=range]:disabled{opacity:.4;cursor:not-allowed}
+.gstat{display:flex;flex-wrap:wrap;gap:6px 16px;padding:10px 16px;border-top:1px solid var(--line);font-size:13px}
+.gstat.hi .gmsg{color:var(--block)} .gstat.lo .gmsg{color:var(--bad)} .gstat.ok .gmsg{color:var(--unit-done)}
+.gstat .muted{color:var(--muted)}
+.ubar{display:inline-flex;width:72px;height:8px;border-radius:2px;overflow:hidden;vertical-align:middle;background:var(--line)}
+.ubar i{display:block;height:100%}
+.unum{font:11px var(--mono);color:var(--muted);margin-left:6px}
+.stepbar{font:12px var(--mono)}
+.stepbar:empty::before{content:attr(data-hint);color:var(--muted);font-family:var(--font)}
+.tlwrap{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+.tlhead{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:0 6px 6px;font-size:12px}
+.evlegend{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted)}
+.evc{display:inline-block;min-width:22px;text-align:center;font:700 10px/16px var(--mono);color:#fff;border-radius:3px;padding:0 3px;margin-right:4px}
+#tl{display:block;width:100%}
+.evfilter{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.evfilter button{border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg);font:12px var(--font);padding:3px 8px;cursor:pointer;display:inline-flex;align-items:center}
+.evfilter button[aria-pressed="false"]{opacity:.45}
+.evfilter button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.log li{cursor:pointer}
+.log li.sel{background:var(--panel);box-shadow:inset 3px 0 0 var(--accent)}
+.log .mname{color:var(--muted);margin-right:6px}
+.kpis span{font-size:12px;color:var(--muted)}
+.kpis b{font:600 18px var(--mono);font-variant-numeric:tabular-nums}
+tr.sub td{color:var(--muted)}
+tr.sub td:first-child{padding-left:26px}
+tr.eqrow td{background:var(--panel)}
+</style>
+
+<div class="wrap">
+  <header class="hdr">
+    <div class="hdr-txt">
+    <h1 id="cfgTitle">设备 · 工序 · 工站 投料动画</h1>
+    <p class="sub" id="cfgIntro">一台<b>设备</b>内有多道 <b>Sequence（工序）</b>前后串联，每道工序可有多个 <b>Stage（工站）</b>并行，用来平衡产能。<br>设备每处理一次产生 1 笔 <b>TransactionID</b>，包含 <b>UnitCount</b> 颗产品；各设备的 UnitCount 可以不同：下一台的第一道工序收满自己的 UnitCount 才开始加工，收不下的产品留在上一台，形成堵塞。</p>
+    </div>
+    <div class="hdr-act">
+      <div class="seg langseg" role="group" aria-label="Language"><button type="button" data-lang="zh" aria-pressed="true">中文</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
+      <button class="btn cfgbtn" id="cfgOpen" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span data-i18n="cfgBtn">配置</span></button>
+    </div>
+  </header>
+
+  <section class="box">
+    <details class="eqcfg" id="eqCfg">
+      <summary><span data-i18n="eqCfg">设备配置</span><span class="sumtxt" id="eqSum"></span></summary>
+      <div class="eqtop"><div class="ctl"><label for="eqSel" data-i18n="eqNum">设备数</label><select class="sel" id="eqSel"></select></div></div>
+      <div class="eqtabs" id="eqTabs"></div>
+      <div class="seqs" id="seqs"></div>
+    </details>
+    <details class="eqcfg" id="genCfg">
+      <summary><span data-i18n="genCfg">投入发生器</span><span class="sumtxt" id="genSum"></span></summary>
+      <div class="genbody">
+        <div class="ctl"><span class="lab" data-i18n="gMode">投入模式</span><div class="seg wide" id="gMode"></div></div>
+        <div class="ctl"><label for="gIat"><span data-i18n="gIat">到达间隔</span> <span class="val" id="gIatV"></span></label><input type="range" id="gIat" min="0.2" max="10" step="0.1"></div>
+        <div class="ctl"><span class="lab" data-i18n="gBatch">每次到达颗数</span><div class="seg" id="gBatch"></div></div>
+        <div class="ctl"><label for="gCap"><span data-i18n="gCap">投入区容量</span> <span class="val" id="gCapV"></span></label><input type="range" id="gCap" min="1" max="40" step="1"></div>
+      </div>
+    </details>
+    <div class="gstat" id="gStat"></div>
+    <div class="txbar" id="txbar"></div>
+  </section>
+
+  <section class="box stage">
+    <div class="controls">
+      <div class="ctl"><label for="speed"><span data-i18n="speedLbl">动画速度</span> <span class="val" id="speedVal"></span></label>
+        <input type="range" id="speed" min="0.5" max="4" step="0.5" value="1.5"></div>
+      <div class="btns"><button class="btn primary" id="play" type="button">暂停</button><button class="btn" id="backBtn" type="button" data-i18n="back" disabled>上一步</button><button class="btn" id="stepBtn" type="button" data-i18n="step">下一步</button><button class="btn" id="reset" type="button" data-i18n="reset">重置</button></div>
+    </div>
+    <div class="txbar stepbar" id="stepInfo"></div>
+    <div class="canvas-wrap"><canvas id="cv"></canvas></div>
+    <div class="legend">
+      <span><i style="background:var(--unit)"></i><span data-i18n="lgUnit">产品</span></span>
+      <span><i style="background:var(--unit-done)"></i><span data-i18n="lgDone">已完成</span></span>
+      <span><i class="st" style="--c:var(--proc)"></i><span data-i18n="uBusy">加工中</span></span>
+      <span><i class="st" style="--c:var(--line)"></i><span data-i18n="uIdle">当站缺料</span></span>
+      <span><i class="st" style="--c:var(--block)"></i><span data-i18n="uBlk">下站堵塞</span></span>
+    </div>
+    <div class="tlwrap">
+      <div class="tlhead"><span class="evlegend" id="evLegend"></span></div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="box panel">
+      <h2 data-i18n="hCap">产能与产出</h2>
+      <div class="kpis" id="kpis"></div>
+      <div class="formula" id="formula"></div>
+    </section>
+    <section class="box panel">
+      <h2 data-i18n="hLog">Transaction 纪录（设备处理一次 = 1 笔）</h2>
+      <div class="evfilter" id="evFilter"></div>
+      <ul class="log" id="log"></ul>
+    </section>
+  </div>
+
+  <details class="box cfx" open>
+    <summary id="cfgCfxTitle">CFX 定义说明：UnitsArrived · WorkStarted · WorkCompleted · UnitsDeparted</summary>
+    <div class="cfx-wrap">
+      <div class="flow" id="cfgFlow"></div>
+      <h3 data-i18n="hCmp">官方定义对照（CFX.Production）</h3>
+      <div class="cmpwrap"><table class="cmp">
+        <thead><tr><th></th><th>UnitsArrived</th><th>WorkStarted</th><th>WorkCompleted</th><th>UnitsDeparted</th></tr></thead>
+        <tbody>
+          <tr><th data-i18n="rWhen">发送时机</th>
+            <td><q>Sent when production units physically arrives at a process endpoint, prior to any work or other activity commencing.</q><br><span data-i18n="aWhen"></span></td>
+            <td><span class="na" data-i18n="wsNoDesc"></span><br><span data-i18n="wsWhen"></span></td>
+            <td><q>Sent by a process endpoint when all work has been completed at a process endpoint.</q><br><span data-i18n="cWhen"></span></td>
+            <td><q>Sent by a process endpoint when units physically depart from a process endpoint. This does not imply any information about any activity that may have taken place.</q><br><span data-i18n="dWhen"></span></td></tr>
+          <tr><th>TransactionID</th>
+            <td><span class="na" data-i18n="na"></span></td>
+            <td><q>Transaction ID used to attach events and data during subsequent processing, until WorkCompleted</q><br><span id="cfgDef1"></span></td>
+            <td><q>Related Transaction ID specified previously by WorkStarted Message.</q><br><span data-i18n="cTx"></span></td>
+            <td><span class="na" data-i18n="na"></span></td></tr>
+          <tr><th>UnitCount</th>
+            <td><q>The number of individual production units</q><br><span data-i18n="aUc"></span></td>
+            <td><q>The number of individual production units associated with this transaction. May be more than 1 in the case of a carrier or panel of multiple PCB's.</q><br><span id="cfgDef2"></span></td>
+            <td><span class="opt" data-i18n="opt"></span> <span data-i18n="cUc"></span></td>
+            <td><q>The number of individual production units</q><br><span data-i18n="dUc"></span></td></tr>
+          <tr><th>Units</th>
+            <td><span class="opt" data-i18n="opt"></span> <q>An optional list of structures that identify each specific instance of production unit that arrived (if known).</q><br><span data-i18n="aUnits"></span></td>
+            <td><q>Data that identifies each specific instance of production unit with a carrier or panel.</q><br><span id="cfgDef3"></span></td>
+            <td><span class="opt" data-i18n="opt"></span> <span data-i18n="cUnits"></span></td>
+            <td><span class="opt" data-i18n="opt"></span> <q>An optional list of structures that identify each specific instance of production unit that arrived (if known).</q><br><span data-i18n="dUnits"></span></td></tr>
+          <tr><th>Primary / Hermes Identifier</th>
+            <td data-i18n="yes"></td><td data-i18n="yes"></td><td><span class="opt" data-i18n="opt"></span> <span data-i18n="yes"></span></td><td data-i18n="yes"></td></tr>
+          <tr><th>Lane</th>
+            <td><q>Lane identifier. Null if no specific lane</q></td><td><q>Lane identifier. Null if no specific lane</q></td><td><span class="na" data-i18n="na"></span></td><td><q>Lane identifier. Null if no specific lane</q></td></tr>
+          <tr><th>Result</th>
+            <td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><q>An enumeration indicating the overall result of the work transaction.</q></td><td><span class="na" data-i18n="na"></span></td></tr>
+        </tbody>
+      </table></div>
+      <div class="cfx-body">
+        <div>
+          <h3 id="cfgNotesTitle"></h3>
+          <ol id="cfgNotes"></ol>
+        </div>
+        <div>
+          <h3 data-i18n="hJson">对照本页最新一笔交易的 WorkStarted 讯息</h3>
+          <pre class="json" id="json"></pre>
+          <p class="src"><span data-i18n="src">来源：</span><a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_UnitsArrived.htm" target="_blank" rel="noopener">UnitsArrived</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkStarted.htm" target="_blank" rel="noopener">WorkStarted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkCompleted.htm" target="_blank" rel="noopener">WorkCompleted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_UnitsDeparted.htm" target="_blank" rel="noopener">UnitsDeparted</a></p>
+        </div>
+      </div>
+    </div>
+  </details>
+</div>
+
+<div class="modal" id="pwModal" hidden>
+  <form class="dlg sm" id="pwForm" autocomplete="off">
+    <h2 data-i18n="pwTitle">输入配置密码</h2>
+    <div class="dlg-body">
+      <div class="fld"><label for="pwInput" data-i18n="pwLbl">密码</label><input type="password" id="pwInput" autocomplete="current-password"></div>
+      <p class="err" id="pwErr"></p>
+    </div>
+    <div class="dlg-foot"><button class="btn" type="button" id="pwCancel" data-i18n="cancel">取消</button><button class="btn primary" type="submit" data-i18n="unlock">解锁</button></div>
+  </form>
+</div>
+
+<div class="modal" id="lkModal" hidden>
+  <form class="dlg sm" id="lkForm" autocomplete="off">
+    <h2 data-i18n="lkTitle">输入密码以修改设定</h2>
+    <div class="dlg-body">
+      <div class="fld"><label for="lkInput" data-i18n="pwLbl">密码</label><input type="password" id="lkInput" autocomplete="off"></div>
+      <p class="err" id="lkErr"></p>
+    </div>
+    <div class="dlg-foot"><button class="btn" type="button" id="lkCancel" data-i18n="cancel">取消</button><button class="btn primary" type="submit" data-i18n="unlock">解锁</button></div>
+  </form>
+</div>
+
+<div class="modal" id="cfgModal" hidden>
+  <form class="dlg" id="cfgForm" autocomplete="off">
+    <h2 id="cfgHead">文字配置</h2>
+    <div class="dlg-body">
+      <p class="hint"><span data-i18n="cfgHint"></span><span id="cfgWhere"></span></p>
+      <div class="fld"><label for="f_title" data-i18n="fTitle"></label><input id="f_title"></div>
+      <div class="fld"><label for="f_intro" data-i18n="fIntro"></label><textarea id="f_intro" rows="4"></textarea></div>
+      <fieldset><legend data-i18n="fCfx"></legend>
+        <div class="fld"><label for="f_cfxTitle" data-i18n="fCfxTitle"></label><input id="f_cfxTitle"></div>
+        <div class="fld"><label for="f_cfxFlow" data-i18n="fFlow"></label><textarea id="f_cfxFlow" rows="2"></textarea></div>
+        <div class="fld"><label for="f_def1" data-i18n="fDef1"></label><textarea id="f_def1" rows="2"></textarea></div>
+        <div class="fld"><label for="f_def2" data-i18n="fDef2"></label><textarea id="f_def2" rows="2"></textarea></div>
+        <div class="fld"><label for="f_def3" data-i18n="fDef3"></label><textarea id="f_def3" rows="2"></textarea></div>
+        <div class="fld"><label for="f_notesTitle" data-i18n="fNotesTitle"></label><input id="f_notesTitle"></div>
+        <div class="fld"><label for="f_notes" data-i18n="fNotes"></label><textarea id="f_notes" rows="7"></textarea></div>
+      </fieldset>
+      <fieldset><legend data-i18n="fPw"></legend>
+        <div class="fld"><label for="f_pw1" data-i18n="fPw1"></label><input type="password" id="f_pw1" autocomplete="new-password"></div>
+        <div class="fld"><label for="f_pw2" data-i18n="fPw2"></label><input type="password" id="f_pw2" autocomplete="new-password"></div>
+      </fieldset>
+      <p class="err" id="cfgErr"></p>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn left" type="button" id="cfgDefault" data-i18n="cfgDefault"></button>
+      <button class="btn" type="button" id="cfgCancel" data-i18n="cancel"></button>
+      <button class="btn primary" type="submit" id="cfgSave" data-i18n="save"></button>
+    </div>
+  </form>
+</div>
+
+<script>
+window.I18N=(function(){
+const D={
+  cfgBtn:['配置','Settings'], ucLbl:['UnitCount（每次投入颗数）','UnitCount (units per load)'], speedLbl:['动画速度','Speed'],
+  play:['播放','Play'], pause:['暂停','Pause'], reset:['重置','Reset'], eqCfg:['设备配置','Equipment setup'], eqNum:['设备数','Equipment'],
+  lgTray:['托盘 = 1 次投入','Tray = 1 load'], lgUnit:['产品','Unit'], lgDone:['已完成','Done'], lgProc:['加工中','Processing'], lgBlock:['等下一站','Waiting for next'], lgBuf:['投入区：发生器送来的产品','Input area: units from the source'], lgEmpty:['空格 = 还没收满 UnitCount','Empty pocket = UnitCount not yet filled'],
+  dgTitle:['CFX 讯息流程图：常规设备 vs. 多 Stage 设备','CFX message flow: standard vs. multi-stage machine'], dgSrc:['draw.io 原始档：','draw.io source file: '],
+  lkTitle:['输入密码以修改设定','Enter password to change settings'],
+  step:['下一步','Step'], back:['上一步','Back'], stepMore:['（同一时刻共 {n} 则，完整内容见讯息纪录）','({n} messages at the same moment; see the message log)'], stepInfo:['第 {n} 步 · {t}s · {eq} · {m} {tx}','Step {n} · {t}s · {eq} · {m} {tx}'], stepHint:['按「下一步」会播放到下一个 CFX 讯息发出后暂停。','Step plays until the next CFX message is sent, then pauses.'],
+  hCap:['产能与产出','Capacity & output'], thEq:['设备 / 工序','Equipment / Seq'], thEff:['等效CT','Eff. CT'], thBal:['内部平衡','Internal balance'],
+  thTx:['TX 笔数','TX count'], thOut:['产出 pcs','Output pcs'], ftLine:['线体完成','Line output'],
+  hLog:['CFX 讯息纪录（点选一笔可在下方查看讯息内容）','CFX message log (click a row to view the message below)'],
+  logEmpty:['产品进入第一台设备后，这里会依时间列出 CFX 讯息。','CFX messages appear here once units enter the first equipment.'], tlTitle:['CFX 讯息时间轴（最近 30 秒）','CFX message timeline (last 30 s)'], tlNow:['现在','now'],
+  hCmp:['官方定义对照（CFX.Production）','Official definitions (CFX.Production)'], rWhen:['发送时机','When sent'],
+  aWhen:['产品实体到达设备，尚未开始加工。','Units physically arrive, before processing starts.'],
+  wsNoDesc:['官方页面无类别说明','No class description on the official page'], wsWhen:['开始加工，产生 TransactionID。','Processing starts and a TransactionID is created.'],
+  cWhen:['设备上所有加工完成。','All work on the equipment is finished.'], dWhen:['产品实体离开设备，不代表加工结果。','Units physically leave; says nothing about the result.'],
+  na:['无此栏位','Not a field'], cTx:['沿用 WorkStarted 的 TransactionID。','Same TransactionID as WorkStarted.'],
+  aUc:['实体到达的产品颗数。','Physical count of units that arrived.'], dUc:['实体离开的产品颗数。','Physical count of units that departed.'],
+  cUc:['文字同 WorkStarted；只有开始时拿不到识别资讯才需要补。','Same text as WorkStarted; only needed if identifiers were unknown at start.'],
+  opt:['选填','Optional'], aUnits:['到达的每颗产品（已知时）。','Each unit that arrived (if known).'], cUnits:['文字同 WorkStarted。','Same text as WorkStarted.'],
+  dUnits:['官方文字沿用 arrived，应理解为离开的产品。','The official text reuses "arrived"; read it as the units that departed.'], yes:['有','Yes'],
+  hJson:['讯息内容（示意）','Message body (example)'], src:['来源：','Sources: '],
+  pwTitle:['输入配置密码','Enter settings password'], pwLbl:['密码','Password'], cancel:['取消','Cancel'], unlock:['解锁','Unlock'],
+  pwWrong:['密码不正确，请重新输入。','Wrong password. Try again.'],
+  cfgHead:['文字配置（中文）','Text settings (English)'],
+  cfgHint:['支持 <code>**粗体**</code> 和 <code>`代码`</code>，说明栏位内的换行会照样显示。这里只修改中文版文字。','Supports <code>**bold**</code> and <code>`code`</code>; line breaks are kept. This edits the English text only.'],
+  whereDb:[' 保存后所有打开本页的人都会看到更新。',' Saved changes appear for everyone who opens this page.'],
+  whereLocal:[' 当前无法连接共享存储，保存只在本浏览器生效。',' Shared storage is unavailable; changes are saved in this browser only.'],
+  fTitle:['主标题','Title'], fIntro:['标题下方说明','Intro text'], fCfx:['CFX 说明区块','CFX section'], fCfxTitle:['区块标题','Section title'],
+  fFlow:['流程总结','Flow summary'], fDef1:['TransactionID 说明','TransactionID note'], fDef2:['UnitCount 说明','UnitCount note'], fDef3:['Units 说明','Units note'],
+  fNotesTitle:['注意事项标题','Notes title'], fNotes:['注意事项（每行一条；同一条内要换行请写 <code>\\n</code>）','Notes (one per line; write <code>\\n</code> for a line break inside a note)'],
+  fPw:['修改密码（不改请留空）','Change password (leave blank to keep)'], fPw1:['新密码','New password'], fPw2:['再输入一次','Confirm password'],
+  cfgDefault:['恢复默认文字','Restore default text'], save:['保存','Save'],
+  pwMismatch:['两次输入的新密码不一致。','The two passwords do not match.'], pwShort:['新密码至少 4 个字符。','Use at least 4 characters.'],
+  noPerm:['你没有修改本页的权限，请联系页面所有者。','You do not have permission to edit this page. Ask the page owner.'], saveFail:['保存失败，请稍后再试。','Could not save. Try again later.'],
+  uEq:[' 台',''], uSeq:[' 道',''], uSt:[' 个',''], eq:['Machine - ','Machine - '], eqShort:['Machine - ','Machine - '],
+  tabSub:['UnitCount {u} · {n} 工序 · {s} 工站','UnitCount {u} · {n} seq · {s} stages'], seqN:['Machine - {e} 的工序数 Sequence','Sequences in Machine - {e}'], stLbl:['Stage 工站','Stages'],
+  eqSum:['{e} 台设备 · {s} 个工站','{e} equipment · {s} stages'], cIn:['投入','In'], cOut:['产出','Out'], perLoad:['{n} pcs/次','{n} pcs/load'],
+  txRule:['设备处理一次 = 1 笔 TransactionID，包含该设备的 <b>UnitCount</b> 颗','1 equipment cycle = 1 TransactionID with that equipment\'s <b>UnitCount</b> units'], latest:['最新：','Latest: '],
+  jsonCmt:['// Machine - {e} · CFX.Production.{m}（示意）· {t}s','// Machine - {e} · CFX.Production.{m} (example) · {t}s'], stageNote:['// WorkStageStarted / WorkStageCompleted 栏位为示意，未逐一核对官方页面','// WorkStageStarted / WorkStageCompleted fields are illustrative, not checked against the official page'],
+  bottleneck:['瓶颈','Bottleneck'],
+  genCfg:['投入发生器','Source (generator)'], gMode:['投入模式','Arrival mode'], mFill:['不缺料','Always full'], mFixed:['固定间隔','Fixed interval'], mExp:['随机间隔（指数）','Random (exponential)'],
+  gIat:['到达间隔','Inter-arrival time'], gBatch:['每次到达颗数','Units per arrival'], gCap:['投入区容量','Input buffer size'],
+  genSumFill:['不缺料 · 投入区容量 {c}','Always full · buffer {c}'], genSum:['{m} · 每 {i}s 到 {b} 颗 · {r} pcs/h','{m} · {b} pcs every {i}s · {r} pcs/h'],
+  gStatHi:['投入速率 {r} pcs/h 高于线体产能 {u} pcs/h：投入区会堆满，发生器被阻塞。','Arrival rate {r} pcs/h is above line capacity {u} pcs/h: the input buffer fills and the source is blocked.'],
+  gStatLo:['投入速率 {r} pcs/h 低于线体产能 {u} pcs/h：产线会缺料，实际产出约等于投入速率。','Arrival rate {r} pcs/h is below line capacity {u} pcs/h: the line starves and output ≈ arrival rate.'],
+  gStatEq:['投入速率 {r} pcs/h 与线体产能 {u} pcs/h 相当。','Arrival rate {r} pcs/h matches line capacity {u} pcs/h.'],
+  gStatFill:['不缺料模式：投入区随时补满，测的是线体最大产能。','Always-full mode: the input buffer is kept full, so this shows maximum line capacity.'],
+  gSrcStat:['已投入 {a} pcs · 发生器阻塞 {b}% 时间','Arrived {a} pcs · source blocked {b}% of the time'],
+  kTheo:['理论 UPH','Theoretical UPH'], kAct:['实际 UPH（近 60s）','Actual UPH (last 60s)'], kArr:['投入速率 pcs/h','Arrival rate pcs/h'], kWip:['在制品 WIP','WIP'],
+  thUtil:['忙碌 / 阻塞 / 缺料 %','Busy / blocked / starved %'], uBusy:['加工中','Processing'], uBlk:['下站堵塞','Blocked by next'], uIdle:['当站缺料','Starved'], utilLbl:['状态 %','State %'], kLine:['线体 UPH','Line UPH'], kBal:['设备间平衡率','Line balance'], kEq:['设备 / 工站','Equipment / stages'],
+  formula:['工序 UPH = 3600 ÷ CT × UnitCount × Stage<br>设备 UPH = 设备内最慢工序；线体 UPH = 最慢设备<br>等效 CT = CT ÷ (UnitCount × Stage)，s/pcs<br>平衡率 = Σ等效CT ÷ (最大等效CT × 数量)',
+           'Seq UPH = 3600 ÷ CT × UnitCount × Stage<br>Equipment UPH = slowest seq inside; Line UPH = slowest equipment<br>Eff. CT = CT ÷ (UnitCount × Stage), s/pcs<br>Balance = ΣEff. CT ÷ (max Eff. CT × count)']
+};
+let lang='zh';try{const s=localStorage.getItem('cfx-lang');if(s==='en'||s==='zh')lang=s;}catch(e){}
+const subs=[];
+function t(k,v){const e=D[k];let s=e?e[lang==='en'?1:0]:k;if(v)s=s.replace(/\{(\w+)\}/g,(m,x)=>v[x]!==undefined?v[x]:m);return s;}
+function applyStatic(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=t(el.dataset.i18n);});
+  document.documentElement.lang=lang==='en'?'en':'zh-CN';
+  document.querySelectorAll('.langseg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===lang)));}
+function set(l){if(l===lang)return;lang=l;try{localStorage.setItem('cfx-lang',l);}catch(e){}applyStatic();subs.forEach(f=>{try{f(l);}catch(e){}});}
+document.querySelectorAll('.langseg button').forEach(b=>b.onclick=()=>set(b.dataset.lang));
+applyStatic();
+return {t,set,get lang(){return lang;},on:f=>subs.push(f)};
+})();
+</script>
+
+<script>
+(function(){
+const T=I18N.t;
+const DEFS={
+zh:{
+  title:'设备 · 工序 · 工站 投料动画',
+  intro:'一台**设备**内有多道 **Sequence（工序）**前后串联，每道工序可有多个 **Stage（工站）**并行，用来平衡产能。\n设备每处理一次产生 1 笔 **TransactionID**，包含 **UnitCount** 颗产品；各设备的 UnitCount 可以不同：下一台的第一道工序收满自己的 UnitCount 才开始加工，收不下的产品留在上一台，形成堵塞。',
+  cfxTitle:'CFX 定义说明：UnitsArrived · WorkStarted · WorkCompleted · UnitsDeparted',
+  cfxFlow:'UnitsArrived（到达）→ WorkStarted（TransactionID 开始）→ WorkCompleted（TransactionID 结束）→ UnitsDeparted（离开）',
+  def1:'从 WorkStarted 到 WorkCompleted 这段加工使用同一个 TransactionID。',
+  def2:'这笔交易关联的产品颗数。',
+  def3:'逐颗列出载具或拼板中的每个产品。',
+  notesTitle:'注意事项',
+  notes:[
+    '**算的是产品颗数，不是投入次数。**投入一片 4 连板或装 4 颗的治具，实体只投入一次，UnitCount 仍是 4。PrimaryIdentifier / HermesIdentifier 填整片板或载具的 ID，Units 再逐颗列出。',
+    '**UnitCount 应等于 Units 列表的笔数**，每颗产品在 Units 中有自己的位置与识别码。',
+    '**WorkCompleted 的 UnitCount 是选填。**只有 WorkStarted 当时拿不到识别资讯时才需补上，正常以 WorkStarted 为准。',
+    '**UnitsArrived / UnitsDeparted 没有 TransactionID。**它们只记录实体进出设备，要靠 PrimaryIdentifier / HermesIdentifier 和 WorkStarted / WorkCompleted 对上。',
+    '**只有 WorkStarted / WorkCompleted 的 UnitCount 绑定交易。**Arrived / Departed 的 UnitCount 只是实体颗数；同一托盘进出同一台设备时，四个讯息的数值应该一致。',
+    '**UnitsDeparted 不代表加工完成或良品。**官方注明不隐含任何加工资讯，结果要看 WorkCompleted 的 Result。'
+  ]},
+en:{
+  title:'Equipment · Sequence · Stage Loading Animation',
+  intro:'Each **equipment** runs several **Sequences** in series, and each sequence can have several parallel **Stages** to balance capacity.\nEach equipment cycle creates 1 **TransactionID** covering **UnitCount** units. UnitCount can differ per equipment: the next equipment\'s first sequence starts only when it has its own UnitCount; units it cannot take stay on the previous equipment and block it.',
+  cfxTitle:'CFX definitions: UnitsArrived · WorkStarted · WorkCompleted · UnitsDeparted',
+  cfxFlow:'UnitsArrived (arrive) → WorkStarted (TransactionID begins) → WorkCompleted (TransactionID ends) → UnitsDeparted (depart)',
+  def1:'One TransactionID covers the processing from WorkStarted to WorkCompleted.',
+  def2:'Number of units tied to this transaction.',
+  def3:'Lists every unit in the carrier or panel.',
+  notesTitle:'Notes',
+  notes:[
+    '**It counts units, not loads.** A 4-up panel or a 4-unit fixture is loaded once, but UnitCount is still 4. PrimaryIdentifier / HermesIdentifier holds the panel or carrier ID; Units lists each unit.',
+    '**UnitCount should equal the number of entries in Units.** Each unit has its own position and identifier.',
+    '**UnitCount in WorkCompleted is optional.** It is only needed when identifiers were unknown at WorkStarted; normally WorkStarted is the reference.',
+    '**UnitsArrived / UnitsDeparted have no TransactionID.** They only record units physically entering and leaving; match them to WorkStarted / WorkCompleted by PrimaryIdentifier / HermesIdentifier.',
+    '**Only the UnitCount in WorkStarted / WorkCompleted is tied to a transaction.** In Arrived / Departed it is a physical count; for one tray through one equipment, all four values should match.',
+    '**UnitsDeparted does not mean the work finished or passed.** The official text says it implies nothing about activity; check Result in WorkCompleted.'
+  ]}
+};
+const DEFAULT_H='7dbfd21c3e9d8f351f0fded60be7bab3763156aa4bd7cc60da69ac497dd5060d';
+const KEYS=['title','intro','cfxTitle','cfxFlow','def1','def2','def3','notesTitle'];
+let all={zh:merge(null,'zh'),en:merge(null,'en')}, pwHash=null, unlocked=false, db=null;
+const $=id=>document.getElementById(id);
+const L=()=>I18N.lang==='en'?'en':'zh';
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function md(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/\r?\n/g,'<br>');}
+function merge(d,lang){const D=DEFS[lang],o=Object.assign({},D);if(d){KEYS.forEach(k=>{if(typeof d[k]==='string')o[k]=d[k];});if(Array.isArray(d.notes))o.notes=d.notes.filter(x=>typeof x==='string');}return o;}
+// stored shape {zh:{...},en:{...}}; older single-language docs are treated as Chinese
+function load(d){if(!d)return;if(d.zh||d.en){all={zh:merge(d.zh,'zh'),en:merge(d.en,'en')};}else{all={zh:merge(d,'zh'),en:all.en};}}
+function raw(){return {zh:all.zh,en:all.en};}
+function apply(){const c=all[L()];
+  $('cfgTitle').innerHTML=md(c.title);$('cfgIntro').innerHTML=md(c.intro);
+  $('cfgCfxTitle').innerHTML=md(c.cfxTitle);$('cfgFlow').innerHTML=md(c.cfxFlow);
+  $('cfgDef1').innerHTML=md(c.def1);$('cfgDef2').innerHTML=md(c.def2);$('cfgDef3').innerHTML=md(c.def3);
+  $('cfgNotesTitle').innerHTML=md(c.notesTitle);
+  $('cfgNotes').innerHTML=(c.notes||[]).map(n=>'<li>'+md(n)+'</li>').join('');
+  $('cfgHead').textContent=T('cfgHead');$('cfgWhere').textContent=db?T('whereDb'):T('whereLocal');}
+
+async function sha(s){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('cfx-cfg:'+s));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}catch(e){return 'plain:'+s;}}
+async function checkPw(p){const h=await sha(p);return h===(pwHash||DEFAULT_H);}
+window.cfxLock={check:checkPw,unlocked:false};
+function lsGet(){try{return JSON.parse(localStorage.getItem('cfx-cfg')||'null');}catch(e){return null;}}
+function lsSet(v){try{localStorage.setItem('cfx-cfg',JSON.stringify(v));}catch(e){}}
+
+(function(){const l=lsGet();if(l){load(l.texts);pwHash=l.pwHash||null;}apply();})();
+I18N.on(()=>{apply();if(!$('cfgModal').hidden)fill();});
+(async function(){
+  if(!window.claude||!claude.use)return;
+  db=await claude.use('db');apply();
+  if(!db)return;
+  db.doc('config/texts').onSnapshot(s=>{if(s.exists){load(s.data());apply();}},()=>{});
+  db.doc('config/lock').onSnapshot(s=>{if(s.exists&&typeof s.data().pwHash==='string')pwHash=s.data().pwHash;},()=>{});
+})();
+
+function open(m){$(m).hidden=false;}
+function close(m){$(m).hidden=true;}
+function fill(){const c=all[L()];KEYS.forEach(k=>$('f_'+k).value=c[k]);$('f_notes').value=(c.notes||[]).map(n=>n.replace(/\n/g,'\\n')).join('\n');$('f_pw1').value='';$('f_pw2').value='';$('cfgErr').textContent='';}
+$('cfgOpen').onclick=()=>{if(unlocked||window.cfxLock.unlocked){fill();open('cfgModal');$('f_title').focus();return;}
+  $('pwInput').value='';$('pwErr').textContent='';open('pwModal');$('pwInput').focus();};
+$('pwCancel').onclick=()=>close('pwModal');
+$('pwForm').onsubmit=async e=>{e.preventDefault();
+  if(await checkPw($('pwInput').value)){unlocked=true;window.cfxLock.unlocked=true;close('pwModal');fill();open('cfgModal');$('f_title').focus();}
+  else{$('pwErr').textContent=T('pwWrong');$('pwInput').select();}};
+$('cfgCancel').onclick=()=>close('cfgModal');
+$('cfgDefault').onclick=()=>{const lg=L(),keep=all[lg];all[lg]=merge(null,lg);fill();all[lg]=keep;};
+['pwModal','cfgModal'].forEach(m=>$(m).addEventListener('click',e=>{if(e.target.id===m)close(m);}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){close('pwModal');close('cfgModal');}});
+
+$('cfgForm').onsubmit=async e=>{e.preventDefault();const err=$('cfgErr');err.textContent='';
+  const p1=$('f_pw1').value,p2=$('f_pw2').value;
+  if(p1||p2){if(p1!==p2){err.textContent=T('pwMismatch');return;}if(p1.length<4){err.textContent=T('pwShort');return;}}
+  const lg=L(),D=DEFS[lg],t={};KEYS.forEach(k=>t[k]=$('f_'+k).value.trim()||D[k]);
+  t.notes=$('f_notes').value.split('\n').map(s=>s.trim().replace(/\\n/g,'\n')).filter(Boolean);
+  const next=raw();next[lg]=t;
+  const newHash=p1?await sha(p1):null;
+  const btn=$('cfgSave');btn.disabled=true;
+  try{
+    if(db){await db.doc('config/texts').set(next);if(newHash)await db.doc('config/lock').set({pwHash:newHash});}
+    load(next);if(newHash)pwHash=newHash;lsSet({texts:next,pwHash});apply();close('cfgModal');
+  }catch(x){err.textContent=x&&x.code==='invalid_argument'?T('noPerm'):T('saveFail');}
+  finally{btn.disabled=false;}
+};
+})();
+</script>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const cv=$('cv'), ctx=cv.getContext('2d');
+const T=I18N.t;let lastIt=null;
+const MAX_EQ=10, MAX_SEQ=5, MAX_ST=6, MAX_UC=8;
+const mkEq=(uc,seqs)=>({uc,n:seqs.length,seqs:seqs.concat(Array.from({length:MAX_SEQ-seqs.length},()=>({stages:1,ct:2.5})))});
+const S={nEq:3, speed:1.5, playing:true, t:0, cur:0,
+  eqs:[mkEq(2,[{stages:2,ct:5},{stages:1,ct:2.5}]), mkEq(4,[{stages:1,ct:5}]), mkEq(1,[{stages:2,ct:2.5}]), mkEq(2,[{stages:1,ct:2.5}]), mkEq(1,[{stages:1,ct:1.5}])]
+    .concat(Array.from({length:MAX_EQ-5},()=>mkEq(1,[{stages:1,ct:1.5}])))};
+let hist=[], hIdx=-1;
+let EV=[], POP=[], VRS=[], laneBusy=[], evN=0, carN=0, vidN=0, selEv=null, logDirty=true;
+const EVT={UA:'UnitsArrived',WS:'WorkStarted',SS:'WorkStageStarted',SC:'WorkStageCompleted',WC:'WorkCompleted',UD:'UnitsDeparted'};
+const evOn={UA:1,WS:1,SS:1,SC:1,WC:1,UD:1};
+const CODE={UA:'UA',WS:'WS',SS:'WSS',SC:'WSC',WC:'WC',UD:'UD'};
+let FL={}, TOPB=0;
+let cols=[], M=[], eqStat=[], items=[], bufs=[], logItems=[], W=0, H=0, G0=null, colors={}, txN=0, unitN=0, outCount=0, outTx=0, lastSpawn=-9;
+const GX=80, GIO=28, ROW=60, PAD=4, UGAP=3, EP=10, BW=64, HEAD=50, BU=8, BG=3;
+const FONT=getComputedStyle(document.body).fontFamily;
+const pad=(n,l)=>String(n).padStart(l,'0');
+const f3=v=>(+v.toFixed(3)).toString();
+const ucOf=e=>S.eqs[e].uc;
+const G={mode:'fixed',iat:1.2,batch:1,cap:12};
+let nextArr=0, srcArrived=0, srcBlk=0, outTimes=[], lastStatsAt=0;
+const capIn=()=>Math.max(G.cap,ucOf(0),G.mode==='fill'?1:G.batch);
+const arrRate=()=>G.mode==='fill'?Infinity:G.batch/G.iat*3600;
+const expRand=m=>-Math.log(1-Math.random())*m;
+let BN=new Set();
+function updTabTags(){document.querySelectorAll('#eqTabs .tab').forEach(b=>{const t=b.querySelector('.btag');if(t){t.hidden=!BN.has(+b.dataset.e);t.textContent=T('bottleneck');}});}
+
+function readColors(){const cs=getComputedStyle(document.documentElement);
+  ['bg','fg','muted','line','track','machine','unit','unit-done','tray','proc','block','accent','panel','bad','ev-ua','ev-ws','ev-ss','ev-sc','ev-wc','ev-ud','topic','topic-bd'].forEach(k=>colors[k]=cs.getPropertyValue('--'+k).trim());}
+
+/* ---------- controls ---------- */
+function sel(el,max,get,set,unit){el.innerHTML='';for(let i=1;i<=max;i++){const o=document.createElement('option');o.value=i;o.textContent=i+(unit?T(unit):'');el.appendChild(o);}
+  el.value=get();el.onchange=()=>set(+el.value);}
+function seg(el,max,get,set){el.innerHTML='';
+  for(let i=1;i<=max;i++){const b=document.createElement('button');b.type='button';b.textContent=i;
+    b.setAttribute('aria-pressed',String(get()===i));
+    b.onclick=()=>{set(i);[...el.children].forEach(c=>c.setAttribute('aria-pressed',String(+c.textContent===i)));};
+    el.appendChild(b);} }
+sel($('eqSel'),MAX_EQ,()=>S.nEq,v=>{S.nEq=v;if(S.cur>=v)S.cur=v-1;buildEditor();reset();},'uEq');
+
+function buildEditor(){
+  const tabs=$('eqTabs');tabs.innerHTML='';let totSt=0;
+  for(let e=0;e<S.nEq;e++){const q=S.eqs[e];const b=document.createElement('button');b.type='button';b.className='tab';
+    const st=q.seqs.slice(0,q.n).reduce((a,s)=>a+s.stages,0);totSt+=st;
+    b.dataset.e=e;b.innerHTML=`${T('eq')}${e+1}<small>${T('tabSub',{u:q.uc,n:q.n,s:st})}</small><span class="btag" hidden></span>`;b.setAttribute('aria-pressed',String(e===S.cur));
+    b.onclick=()=>{S.cur=e;buildEditor();};tabs.appendChild(b);}
+  $('eqSum').textContent=T('eqSum',{e:S.nEq,s:totSt});updTabTags();
+  const eq=S.eqs[S.cur], box=$('seqs');box.innerHTML='';
+  const head=document.createElement('div');head.className='eqhead';
+  head.innerHTML=`<div class="ctl"><span class="lab">${T('ucLbl')}</span><div class="seg" id="ucSeg"></div></div>
+    <div class="ctl"><label for="seqN">${T('seqN',{e:S.cur+1})}</label><select class="sel" id="seqN"></select></div>`;
+  box.appendChild(head);
+  seg(head.querySelector('#ucSeg'),MAX_UC,()=>eq.uc,v=>{eq.uc=v;buildEditor();reset();});
+  sel(head.querySelector('select'),MAX_SEQ,()=>eq.n,v=>{eq.n=v;buildEditor();reset();},'uSeq');
+  for(let k=0;k<eq.n;k++){const q=eq.seqs[k];
+    const c=document.createElement('div');c.className='seqcard';
+    c.innerHTML=`<h3>Sequence ${k+1}</h3>
+      <div class="ctl"><label for="st${k}">${T('stLbl')}</label><select class="sel" id="st${k}"></select></div>
+      <div class="ctl"><label for="ct${k}">CT <span class="val" id="ctv${k}">${q.ct.toFixed(2).replace(/0$/,'')} s</span></label>
+      <input type="range" id="ct${k}" min="0.5" max="10" step="0.25" value="${q.ct}"></div>`;
+    box.appendChild(c);
+    sel(c.querySelector('select'),MAX_ST,()=>q.stages,v=>{q.stages=v;buildEditor();reset();},'uSt');
+    c.querySelector('input').oninput=e=>{q.ct=+e.target.value;$('ctv'+k).textContent=q.ct.toFixed(2).replace(/0$/,'')+' s';renderStats();};
+  }}
+
+$('speed').oninput=()=>{S.speed=+$('speed').value;$('speedVal').textContent=S.speed.toFixed(1)+'×';};
+$('speedVal').textContent=S.speed.toFixed(1)+'×';
+$('play').onclick=()=>{S.playing=!S.playing;S.stepTo=0;if(S.playing){hist=hist.slice(0,hIdx+1);S.freeRun=true;}$('play').textContent=S.playing?T('pause'):T('play');};
+$('stepBtn').onclick=()=>{if(S.stepTo)return;
+  if(!hist.length||S.freeRun){S.playing=false;pushHist($('stepInfo').innerHTML);S.freeRun=false;}
+  if(hIdx<hist.length-1){hIdx++;restore(hist[hIdx]);return;}
+  S.stepFrom=evN;S.stepTo=evN+1;S.playing=true;$('play').textContent=T('play');};
+$('backBtn').onclick=()=>{if(S.freeRun&&S.playing){S.playing=false;}if(S.stepTo){S.stepTo=0;S.playing=false;}
+  if(S.freeRun){pushHist($('stepInfo').innerHTML);S.freeRun=false;}
+  if(hIdx>0){hIdx--;restore(hist[hIdx]);}};
+function snap(info){return {info,st:structuredClone({items,M,bufs,EV,VRS,laneBusy,eqStat,outTimes}),
+  sc:{t:S.t,txN,unitN,outCount,outTx,lastSpawn,nextArr,srcArrived,srcBlk,evN,carN,vidN},sel:selEv?selEv.id:null};}
+function pushHist(info){hist=hist.slice(0,hIdx+1);hist.push(snap(info));if(hist.length>300)hist.shift();hIdx=hist.length-1;updHist();}
+function updHist(){$('backBtn').disabled=hIdx<=0;}
+function restore(h){S.playing=false;S.stepTo=0;const c=structuredClone(h.st);
+  items=c.items;M=c.M;bufs=c.bufs;EV=c.EV;VRS=c.VRS;laneBusy=c.laneBusy;eqStat=c.eqStat;outTimes=c.outTimes;S.t=h.sc.t;
+  ({txN,unitN,outCount,outTx,lastSpawn,nextArr,srcArrived,srcBlk,evN,carN,vidN}=h.sc);
+  selEv=EV.find(e=>e.id===h.sel)||null;FL={};
+  if(selEv){const ev=selEv,k=cols.findIndex(c=>c.e===ev.e&&c.s+1===ev.seq);
+    FL[(ev.type==='SS'||ev.type==='SC')?ev.type+':'+k+':'+(ev.stage-1):ev.type+':'+ev.e]={t:performance.now(),type:ev.type};}
+  logDirty=true;renderLog();renderJson();renderStats();$('stepInfo').innerHTML=h.info;$('play').textContent=T('play');updHist();}
+function stepDone(){S.playing=false;S.stepTo=0;$('play').textContent=T('play');const ev=EV[EV.length-1];if(!ev)return;
+  selEv=ev;logDirty=true;renderLog();renderJson();renderStats();
+  $('stepInfo').innerHTML=`<span class="evc" style="background:var(--ev-${ev.type.toLowerCase()})">${CODE[ev.type]}</span>`+T('stepInfo',{n:ev.id,t:ev.t.toFixed(1),eq:T('eq')+(ev.e+1)+(ev.seq?' · Seq'+ev.seq+' / S'+ev.stage:''),m:EVT[ev.type],tx:ev.tx||ev.car||''})+(evN-S.stepFrom>1?' '+T('stepMore',{n:evN-S.stepFrom}):'');}
+$('reset').onclick=reset;
+
+/* ---------- geometry ---------- */
+let U=10;
+function trayW(uc){const c=Math.min(uc,4);return c*U+(c-1)*UGAP+PAD*2;}
+function trayH(uc){const r=Math.ceil(uc/4);return r*U+(r-1)*UGAP+PAD*2;}
+function cap(e){return e===0?capIn():Math.max(2*ucOf(e),ucOf(e-1)+ucOf(e));}
+function layout(){
+  cols=[];for(let e=0;e<S.nEq;e++){const q=S.eqs[e];for(let s=0;s<q.n;s++)cols.push({e,s,q:q.seqs[s],first:s===0,last:s===q.n-1});}
+  const avail=cv.parentElement.clientWidth;U=avail<560?8:10;
+  const fixed=BW*2+GX*(S.nEq-1)+2*GIO+S.nEq*2*EP, minCol=trayW(4)+34;
+  const colW=Math.max(minCol,Math.min(170,(avail-fixed)/cols.length));
+  W=Math.max(avail,fixed+colW*cols.length);
+  const off=Math.max(0,W-(fixed+colW*cols.length))/2;
+  const maxSt=Math.max(...cols.map(c=>c.q.stages));
+  let x=off;const eqBox=[],bufX=[];
+  for(let e=0;e<S.nEq;e++){if(e===0){bufX.push(x+BW/2);x+=BW+GIO;}else{bufX.push(x+GX/2);x+=GX;}const x0=x;x+=EP;cols.filter(c=>c.e===e).forEach(c=>{c.x0=x;c.cx=x+colW/2;x+=colW;});x+=EP;eqBox.push({x0,x1:x});}
+  G0={colW,mw:Math.min(colW-14,124),mh:ROW-10,maxSt,eqBox,bufX,outX:x+GIO+BW/2,bufY:HEAD+Math.min(maxSt*ROW,120)/2};
+  H=HEAD+Math.max(maxSt*ROW,4*(BU+BG)+40)+10;
+  TOPB=52+(Math.min(6,maxSt)+1)*22+12;
+}
+function mPos(k,j){const c=cols[k],top=HEAD+(G0.maxSt-c.q.stages)*ROW/2;return {x:c.cx,y:top+j*ROW+ROW/2};}
+function resize(){layout();const dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=(H+TOPB+STB)*dpr;cv.style.width=W+'px';cv.style.height=(H+TOPB+STB)+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
+window.addEventListener('resize',()=>{resize();items.forEach(it=>{if(!it.path.length&&it.k>=0){const p=mPos(it.k,it.j);it.x=p.x;it.y=p.y;}});});
+
+function reset(){S.t=0;FL={};S.stepTo=0;hist=[];hIdx=-1;S.freeRun=false;if($('backBtn'))$('backBtn').disabled=true;if($('stepInfo')){$('stepInfo').innerHTML='';$('stepInfo').dataset.hint=T('stepHint');}items=[];logItems=[];EV=[];POP=[];VRS=[];evN=0;carN=0;vidN=0;selEv=null;logDirty=true;laneBusy=S.eqs.slice(0,S.nEq).map(q=>new Array(Math.max(1,q.seqs.slice(0,q.n).reduce((a,s)=>a+s.stages,0))).fill(false));txN=0;unitN=0;outCount=0;outTx=0;lastSpawn=-9;
+  resize();M=cols.map(c=>Array.from({length:c.q.stages},()=>({occ:null,busy:0,blk:0,idle:0})));nextArr=0;srcArrived=0;srcBlk=0;outTimes=[];
+  eqStat=Array.from({length:S.nEq},()=>({tx:0}));bufs=[{units:[],incoming:0}];
+  renderStats();renderLog();renderTxbar(null);}
+
+/* ---------- simulation ---------- */
+function route(it,tx,ty,midX){it.path=[{x:midX,y:it.y},{x:midX,y:ty},{x:tx,y:ty}];}
+function step(dt){S.t+=dt;const V=320,N=cols.length,g=G0;
+  // line input: single units arrive into the first buffer
+  if(G.mode==='fill'){if(bufs[0].units.length<cap(0)&&S.t-lastSpawn>0.12){lastSpawn=S.t;bufs[0].units.push('U'+pad(++unitN,4));srcArrived++;}}
+  else if(S.t>=nextArr){if(bufs[0].units.length+G.batch<=cap(0)){for(let i=0;i<G.batch;i++)bufs[0].units.push('U'+pad(++unitN,4));srcArrived+=G.batch;nextArr=S.t+(G.mode==='exp'?expRand(G.iat):G.iat);}else srcBlk+=dt;}
+  // finished trays move on
+  for(let k=N-1;k>=0;k--){M[k].forEach(m=>{const it=m.occ;if(!it||it.st!=='blocked'||it.wcAt)return;const c=cols[k];
+    if(!c.last){const nj=M[k+1].findIndex(n=>!n.occ);if(nj<0)return;
+      m.occ=null;M[k+1][nj].occ=it;it.k=k+1;it.j=nj;it.st='move';const p=mPos(k+1,nj);route(it,p.x,p.y,cols[k+1].x0);return;}
+    if(c.e===S.nEq-1){it.pend=[{type:'UD',x:g.eqBox[c.e].x1,e:c.e,o:{k:it.k,j:it.j,tx:it.tx,car:it.car,vid:it.vid,units:it.units.slice()}}];m.occ=null;it.st='toOut';it.done=true;it.k=-1;route(it,g.outX,it.y,g.eqBox[c.e].x1+4);return;}
+    const e2=c.e+1,k1=cols.findIndex(x=>x.e===e2&&x.first),uc2=ucOf(e2);
+    while(it.units.length){let j=M[k1].findIndex(n=>n.occ&&n.occ.st==='load'&&n.occ.units.length+n.occ.incoming<uc2);
+      if(j<0)j=M[k1].findIndex(n=>!n.occ);if(j<0)break;
+      let L=M[k1][j].occ;const p=mPos(k1,j);
+      if(!L){L={x:p.x,y:p.y,path:[],st:'load',k:k1,j,t:0,units:[],incoming:0,uc:uc2,done:false,a:0,tx:null,eq:e2,car:'CR-'+pad(++carN,4),vid:++vidN};
+        const lb=laneBusy[e2];let ln=lb.indexOf(false);if(ln<0)ln=0;lb[ln]=true;L.lane=ln;
+        VRS.push({vid:L.vid,e:e2,lane:ln,ua:S.t,ws:null,wc:null,ud:null,ev:[]});M[k1][j].occ=L;items.push(L);}
+      const n=Math.min(it.units.length,uc2-L.units.length-L.incoming),chunk=it.units.splice(0,n);L.incoming+=n;if(it.units.length)it.uc=it.units.length;
+      const P={x:it.x,y:it.y,path:[],st:'xfer',k:-1,j:-1,units:chunk,uc:n,target:L,done:false,a:0,
+        pend:[{type:'UD',x:g.eqBox[c.e].x1,e:c.e,o:{k:it.k,j:it.j,tx:it.tx,car:it.car,vid:it.vid,units:chunk.slice(),partial:it.units.length>0}},
+              {type:'UA',x:g.eqBox[e2].x0,e:e2,o:{k:k1,j,tx:null,car:L.car,vid:L.vid,units:chunk.slice()}}]};
+      route(P,p.x,p.y,(g.eqBox[c.e].x1+g.eqBox[e2].x0)/2);items.push(P);}
+    if(!it.units.length){m.occ=null;it.gone=true;}});}
+  // each equipment loads UnitCount units from its buffer into a free first-sequence stage
+  for(let e=0;e<1;e++){const k0=cols.findIndex(c=>c.e===e&&c.first),uc=ucOf(e),b=bufs[e];
+    M[k0].forEach((m,j)=>{if(m.occ||b.units.length<uc)return;
+      const it={x:g.bufX[e],y:g.bufY,path:[],st:'move',k:k0,j,t:0,units:b.units.splice(0,uc),uc,done:false,a:0,tx:null,eq:e};
+      it.car='CR-'+pad(++carN,4);it.vid=++vidN;const lb=laneBusy[e];let ln=lb.indexOf(false);if(ln<0)ln=0;lb[ln]=true;it.lane=ln;
+      VRS.push({vid:it.vid,e,lane:ln,ua:S.t,ws:null,wc:null,ud:null,ev:[]});
+      m.occ=it;const p=mPos(k0,j);route(it,p.x,p.y,g.bufX[e]);items.push(it);it.pend=[{type:'UA',x:g.eqBox[e].x0,e,o:{k:k0,j,tx:null,car:it.car,vid:it.vid,units:it.units.slice()}}];});}
+  items.forEach(it=>{let d=V*dt;
+    while(d>0&&it.path.length){const p=it.path[0],dx=p.x-it.x,dy=p.y-it.y,L=Math.hypot(dx,dy);
+      if(L<=d){it.x=p.x;it.y=p.y;it.path.shift();d-=L;}else{it.x+=dx/L*d;it.y+=dy/L*d;d=0;}}
+    if(it.pend&&it.pend.length)it.pend=it.pend.filter(p=>{if(it.x>=p.x-0.01){emit(p.type,p.o,p.e);return false;}return true;});
+    if(it.path.length)return;
+    if(it.wcAt&&S.t>=it.wcAt){it.wcAt=0;const c=cols[it.k];eqStat[c.e].tx++;emit('WC',it,c.e);addLog(it,c.e);}
+    if(it.st==='move'){it.st='proc';it.t=0;const c=cols[it.k];if(c.first){it.tx='TX-'+pad(++txN,5);renderTxbar(it);emit('WS',it,c.e,it.x,it.y);}emit('SS',it,c.e,it.x,it.y);}
+    else if(it.st==='proc'){it.t+=dt;const c=cols[it.k];if(it.t>=c.q.ct){it.st='blocked';emit('SC',it,c.e,it.x,it.y);if(c.last)it.wcAt=S.t+0.3;}}
+    else if(it.st==='xfer'){const L=it.target;L.units.push(...it.units);L.incoming-=it.units.length;it.gone=true;if(L.units.length>=L.uc&&L.st==='load'){L.st='move';}}
+    else if(it.st==='toOut')it.a+=dt;});
+  M.forEach(row=>row.forEach(m=>{const o=m.occ;if(!o||o.st==='load')m.idle+=dt;else if(o.st==='blocked')m.blk+=dt;else m.busy+=dt;}));
+  items=items.filter(it=>{if(it.gone)return false;if(it.st==='toOut'&&!it.path.length&&it.a>0.4){outCount+=it.units.length;outTx++;it.units.forEach(()=>outTimes.push(S.t));return false;}return true;});
+}
+
+/* ---------- drawing ---------- */
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function text(s,x,y,size,col,weight,align){ctx.font=`${weight||400} ${size}px ${FONT}`;ctx.fillStyle=col;ctx.textAlign=align||'center';ctx.textBaseline='middle';ctx.fillText(s,x,y);}
+function drawBuf(x,units,label,done,capTxt,full){ctx.fillStyle=colors.track;ctx.fillRect(x-BW/2+8,HEAD-6,BW-16,H-HEAD);
+  if(label)text(label,x,12,12,colors.fg,600);
+  text(capTxt||units+' pcs',x,32,11,full?colors.bad:colors.muted,full?600:400);
+  const gw=4*BU+3*BG,show=Math.min(units,4*Math.floor((H-HEAD-6)/(BU+BG)));
+  for(let i=0;i<show;i++){ctx.fillStyle=done?colors['unit-done']:colors.unit;rr(x-gw/2+(i%4)*(BU+BG),HEAD+Math.floor(i/4)*(BU+BG),BU,BU,1.5);ctx.fill();}}
+function drawTray(it){const tw=trayW(it.uc),th=trayH(it.uc),x=it.x-tw/2,y=it.y-th/2+3;
+  ctx.globalAlpha=it.st==='toOut'&&!it.path.length?Math.max(0,1-it.a/0.4):1;
+  ctx.fillStyle=colors.tray;rr(x,y,tw,th,3);ctx.fill();
+  for(let i=0;i<it.uc;i++){const ux=x+PAD+(i%4)*(U+UGAP),uy=y+PAD+Math.floor(i/4)*(U+UGAP);
+    if(i<it.units.length){ctx.fillStyle=it.done?colors['unit-done']:colors.unit;rr(ux,uy,U,U,2);ctx.fill();}else{ctx.strokeStyle=colors.machine;ctx.lineWidth=1;rr(ux+.5,uy+.5,U-1,U-1,2);ctx.stroke();}}
+  ctx.globalAlpha=1;}
+function draw(){ctx.clearRect(0,0,W,H+TOPB+STB);drawBoard();ctx.save();ctx.translate(0,TOPB);const g=G0;
+  bufs.forEach((b,e)=>drawBuf(g.bufX[e],b.units.length,e===0?T('cIn'):'',false,e===0?srcArrived+' pcs':'',false));
+  drawBuf(g.outX,outCount,T('cOut'),true);
+  g.eqBox.forEach((b,e)=>{ctx.strokeStyle=colors.line;ctx.lineWidth=1.5;rr(b.x0,20,b.x1-b.x0,H-24,6);ctx.stroke();
+    const lab=T('eq')+(e+1)+' · UnitCount '+ucOf(e);ctx.font='600 12px '+FONT;const lw=ctx.measureText(lab).width+12;
+    ctx.fillStyle=colors.bg;ctx.fillRect((b.x0+b.x1)/2-lw/2,4,lw,16);text(lab,(b.x0+b.x1)/2,12,12,colors.fg,600);
+    if(BN.has(e)){const bt=T('bottleneck');ctx.font='600 10px '+FONT;const tw=ctx.measureText(bt).width+10,tx=b.x1-tw-6,ty=26;
+      ctx.fillStyle=colors.bg;rr(tx,ty,tw,15,3);ctx.fill();ctx.strokeStyle=colors.bad;ctx.lineWidth=1;rr(tx,ty,tw,15,3);ctx.stroke();text(bt,tx+tw/2,ty+8,10,colors.bad,600);}});
+  cols.forEach((c,k)=>{
+    text('Seq'+(c.s+1)+' · '+c.q.ct+'s',c.cx,35,11,colors.muted,600);
+    if(!c.first){ctx.strokeStyle=colors.line;ctx.setLineDash([3,4]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(c.x0,28);ctx.lineTo(c.x0,H-10);ctx.stroke();ctx.setLineDash([]);}
+    M[k].forEach((m,j)=>{const p=mPos(k,j),x=p.x-g.mw/2,y=p.y-g.mh/2,it=m.occ;
+      const busy=it&&it.st==='proc', blk=it&&it.st==='blocked';
+      ctx.fillStyle=colors.machine;rr(x,y,g.mw,g.mh,4);ctx.fill();
+      ctx.strokeStyle=busy?colors.proc:blk?colors.block:colors.line;ctx.lineWidth=busy||blk?2:1;rr(x,y,g.mw,g.mh,4);ctx.stroke();
+      text('S'+(j+1),x+6,y+8,10,colors.muted,600,'left');
+      if(it&&it.tx&&(busy||blk))text(it.tx.replace(/^TX-0*/,'TX'),x+g.mw-5,y+8,10,busy?colors.proc:colors.block,600,'right');
+      if(busy){const pr=Math.min(it.t/c.q.ct,1);ctx.fillStyle=colors.line;ctx.fillRect(x+6,y+g.mh-5,g.mw-12,3);ctx.fillStyle=colors.proc;ctx.fillRect(x+6,y+g.mh-5,(g.mw-12)*pr,3);}
+    });});
+  items.forEach(drawTray);
+  drawStats();ctx.restore();
+}
+/* ---------- per-equipment stats under the cards ---------- */
+const STB=96;
+function uf(a){const tot=a.reduce((x,m)=>x+m.busy+m.blk+m.idle,0);if(!tot)return null;
+  const b=a.reduce((x,m)=>x+m.busy,0)/tot*100,k=a.reduce((x,m)=>x+m.blk,0)/tot*100;return [b,k,Math.max(0,100-b-k)];}
+function ubarC(x,y,w,u){ctx.fillStyle=colors.line;rr(x,y,w,6,2);ctx.fill();if(!u)return;let cx=x;
+  [[u[0],colors.proc],[u[1],colors.block]].forEach(([p,c])=>{const ww=w*p/100;if(ww>0){ctx.fillStyle=c;ctx.fillRect(cx,y,ww,6);}cx+=ww;});}
+function drawStats(){const E=calc(),g=G0,y0=H+4;
+  const lx=g.bufX[0];
+  [['CT × Stage',y0+8],[T('thEff')+' · UPH',y0+22],[T('utilLbl'),y0+40]].forEach(([s,y])=>text(s,lx,y,9,colors.muted,400));
+  cols.forEach(c=>{const s=E[c.e]&&E[c.e].seqs[c.s];if(!s)return;const w=g.colW-20,x=c.x0+10;
+    text('CT '+f3(s.ct)+'s × '+s.stages,c.cx,y0+8,10,colors.muted);
+    text(f3(s.eff)+' s/pcs · '+s.uph.toLocaleString(),c.cx,y0+22,10,colors.fg,600);
+    const u=uf(sl(c.e,c.s));ubarC(x,y0+31,w,u);text(u?u.map(v=>v.toFixed(0)).join('/'):'–',c.cx,y0+46,9,colors.muted);});
+  g.eqBox.forEach((bx,e)=>{const ee=E[e];if(!ee)return;const cx=(bx.x0+bx.x1)/2,tx=eqStat[e]?eqStat[e].tx:0;
+    ctx.strokeStyle=colors.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(bx.x0,y0+56);ctx.lineTo(bx.x1,y0+56);ctx.stroke();
+    text(ee.uph.toLocaleString()+' UPH'+(ee.seqs.length>1?' · '+T('thBal')+' '+ee.bal.toFixed(0)+'%':''),cx,y0+68,11,BN.has(e)?colors.bad:colors.fg,700);
+    text('TX '+tx+' · '+(tx*ee.uc)+' pcs',cx,y0+84,10,colors.muted);});
+}
+/* ---------- topic board ---------- */
+const BH=18, FLASH=1100;
+const bwS=()=>Math.max(30,Math.min(46,(G0.colW-18)/2));
+const rowYf=j=>52+j*22;
+function boxPos(type,e,k,j){const g=G0,bw=bwS();
+  if(type==='UA')return {x:g.eqBox[e].x0,y:6,w:36};if(type==='UD')return {x:g.eqBox[e].x1,y:6,w:36};
+  if(type==='WS'){const c=cols.find(x=>x.e===e&&x.first);return {x:c.cx-bw/2-2,y:28,w:bw};}if(type==='WC'){const c=cols.find(x=>x.e===e&&x.last);return {x:c.cx+bw/2+2,y:rowYf(Math.min(6,c.q.stages)),w:bw};}
+  const c=cols[k];return {x:type==='SS'?c.cx-bw/2-2:c.cx+bw/2+2,y:rowYf(j),w:bw};}
+function topicBox(label,p,key,type,on){const f=FL[key],a=f?Math.max(0,1-(performance.now()-f.t)/FLASH):0,ec=colors['ev-'+type.toLowerCase()];
+  const w=p.w,h=BH,x=p.x-w/2,y=p.y;
+  ctx.fillStyle=colors.bg;rr(x,y,w,h,3);ctx.fill();
+  if(on&&a<=0){ctx.globalAlpha=.14;ctx.fillStyle=ec;rr(x,y,w,h,3);ctx.fill();ctx.globalAlpha=1;}
+  if(a>0){ctx.globalAlpha=a;ctx.fillStyle=ec;rr(x,y,w,h,3);ctx.fill();ctx.globalAlpha=1;}
+  ctx.strokeStyle=a>0||on?ec:colors.line;ctx.lineWidth=1;rr(x+.5,y+.5,w-1,h-1,3);ctx.stroke();
+  text(label,p.x,y+h/2+.5,10,a>.45?'#fff':(on?ec:colors.muted),600);}
+function drawBoard(){const g=G0;
+  g.eqBox.forEach((b,e)=>{[['UA',b.x0],['UD',b.x1]].forEach(([t,x])=>{const f=FL[t+':'+e],a=f?Math.max(0,1-(performance.now()-f.t)/FLASH):0;
+      ctx.strokeStyle=a>0?colors['ev-'+t.toLowerCase()]:colors.line;ctx.lineWidth=1;ctx.setLineDash(a>0?[]:[2,3]);ctx.beginPath();ctx.moveTo(x,6+BH);ctx.lineTo(x,TOPB+20);ctx.stroke();ctx.setLineDash([]);});
+    topicBox('UA',boxPos('UA',e),'UA:'+e,'UA');topicBox('UD',boxPos('UD',e),'UD:'+e,'UD');
+    topicBox('WS',boxPos('WS',e),'WS:'+e,'WS');topicBox('WC',boxPos('WC',e),'WC:'+e,'WC');});
+  cols.forEach((c,k)=>{for(let j=0;j<Math.min(6,c.q.stages);j++){
+    const o=M[k]&&M[k][j]&&M[k][j].occ;
+    topicBox('WS'+(j+1)+'S',boxPos('SS',c.e,k,j),'SS:'+k+':'+j,'SS',o&&o.st==='proc');topicBox('WS'+(j+1)+'C',boxPos('SC',c.e,k,j),'SC:'+k+':'+j,'SC',o&&o.st==='blocked');}});}
+function drawPulses(){const nr=performance.now();
+  Object.values(FL).forEach(f=>{const a=Math.max(0,1-(nr-f.t)/FLASH);if(a<=0)return;
+    ctx.strokeStyle=colors['ev-'+f.type.toLowerCase()];ctx.globalAlpha=a;ctx.lineWidth=2;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(f.bx,f.by);ctx.lineTo(f.tx,f.ty);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.arc(f.tx,f.ty,3.5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;});}
+/* ---------- CFX events ---------- */
+function emit(type,it,e,x,y){const c=it.k>=0?cols[it.k]:null;
+  const ev={id:++evN,t:S.t,type,e,tx:it.tx,car:it.car,units:it.units.slice(),uc:it.units.length,seq:c?c.s+1:null,stage:it.j+1};
+  EV.push(ev);if(EV.length>500)EV.shift();logDirty=true;
+  const v=VRS.find(r=>r.vid===it.vid);if(v){v.ev.push({t:S.t,type});if(type==='WS')v.ws=S.t;if(type==='WC')v.wc=S.t;if(type==='UD'&&!it.partial){v.ud=S.t;if(laneBusy[e])laneBusy[e][v.lane]=false;}}
+  if(G0&&it.k>=0){const k=it.k,j=it.j,key=(type==='SS'||type==='SC')?type+':'+k+':'+j:type+':'+e;
+    const bp=boxPos(type,e,k,j),p=mPos(k,j);let tx=p.x,ty=p.y-G0.mh/2;
+    if(type==='UA'){tx=G0.eqBox[e].x0;ty=p.y;}else if(type==='UD'){tx=G0.eqBox[e].x1;ty=p.y;}
+    FL[key]={t:performance.now(),type,bx:bp.x,by:bp.y+BH,tx,ty:ty+TOPB};}
+  VRS=VRS.filter(r=>r.ud===null||r.ud>S.t-35);}
+const tl=null,tctx=null;let TW=0,TH=0,rowY=[];
+function sizeTL(){TW=tl.parentElement.clientWidth;rowY=[];let y=22;
+  for(let e=0;e<S.nEq;e++){const lanes=Math.min(6,Math.max(1,S.eqs[e].seqs.slice(0,S.eqs[e].n).reduce((a,s)=>a+s.stages,0)));rowY.push({y,h:lanes*8+10});y+=lanes*8+10;}
+  TH=y+4;const dpr=window.devicePixelRatio||1;tl.width=TW*dpr;tl.height=TH*dpr;tl.style.height=TH+'px';tctx.setTransform(dpr,0,0,dpr,0,0);}
+function drawTL(){const c=tctx,now=S.t,win=30,L0=78,w=TW-L0-12,X=t=>L0+(t-(now-win))/win*w;c.clearRect(0,0,TW,TH);
+  c.font='10px '+FONT;c.textBaseline='middle';
+  for(let s=0;s<=win;s+=5){const x=L0+(win-s)/win*w;c.strokeStyle=colors.line;c.lineWidth=1;c.beginPath();c.moveTo(x,16);c.lineTo(x,TH-2);c.stroke();
+    c.fillStyle=colors.muted;c.textAlign='center';c.fillText(s===0?T('tlNow'):'-'+s+'s',x,8);}
+  rowY.forEach((r,e)=>{c.fillStyle=e%2?colors.bg:colors.panel;c.fillRect(0,r.y,TW,r.h);c.fillStyle=colors.fg;c.textAlign='left';c.font='600 11px '+FONT;c.fillText(T('eq')+(e+1),6,r.y+r.h/2);c.font='10px '+FONT;});
+  VRS.forEach(v=>{const r=rowY[v.e];if(!r)return;const end=v.ud!==null?v.ud:now;if(end<now-win)return;const ly=r.y+6+v.lane*8+2;
+    const x0=Math.max(L0,X(v.ua)),x1=X(end);c.strokeStyle=colors.muted;c.globalAlpha=.6;c.lineWidth=1;c.beginPath();c.moveTo(x0,ly);c.lineTo(x1,ly);c.stroke();c.globalAlpha=1;
+    if(v.ws!==null){const a=Math.max(L0,X(v.ws)),b=X(v.wc!==null?v.wc:now);if(b>a){c.fillStyle=colors.proc;c.globalAlpha=.28;c.fillRect(a,ly-2.5,b-a,5);c.globalAlpha=1;}}
+    v.ev.forEach(ev=>{if(ev.t<now-win)return;c.fillStyle=colors['ev-'+ev.type.toLowerCase()];c.beginPath();c.arc(X(ev.t),ly,2.6,0,Math.PI*2);c.fill();});});}
+function buildEvUI(){const lg=$('evLegend');lg.innerHTML=Object.keys(EVT).map(k=>`<span><span class="evc" style="background:var(--ev-${k.toLowerCase()})">${CODE[k]}</span>${EVT[k]}</span>`).join('');
+  const f=$('evFilter');f.innerHTML='';Object.keys(EVT).forEach(k=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed',String(!!evOn[k]));
+    b.innerHTML=`<span class="evc" style="background:var(--ev-${k.toLowerCase()})">${CODE[k]}</span>${EVT[k]}`;b.onclick=()=>{evOn[k]=evOn[k]?0:1;b.setAttribute('aria-pressed',String(!!evOn[k]));logDirty=true;renderLog();};f.appendChild(b);});}
+$('log').addEventListener('click',e=>{const li=e.target.closest('li[data-i]');if(!li)return;selEv=EV.find(x=>x.id===+li.dataset.i)||null;logDirty=true;renderLog();renderJson();});
+function msgBody(ev){const units=ev.units.map((u,i)=>({UnitIdentifier:u,PositionNumber:i+1,PositionName:'Pos'+(i+1)}));const st={StageSequence:ev.seq,StageName:'Seq'+ev.seq+'-S'+ev.stage};
+  switch(ev.type){case 'UA':case 'UD':return {Lane:null,PrimaryIdentifier:ev.car,UnitCount:ev.uc,Units:units};
+    case 'WS':return {TransactionID:ev.tx,Lane:null,PrimaryIdentifier:ev.car,UnitCount:ev.uc,Units:units};
+    case 'SS':case 'SC':return {TransactionID:ev.tx,Stage:st};
+    case 'WC':return {TransactionID:ev.tx,Result:'Completed'};}}
+function renderJson(){const j=$('json');if(!j)return;let ev=selEv;if(!ev)for(let i=EV.length-1;i>=0;i--)if(EV[i].type==='WS'){ev=EV[i];break;}
+  if(!ev){j.textContent='';return;}
+  j.textContent=T('jsonCmt',{e:ev.e+1,m:EVT[ev.type],t:ev.t.toFixed(1)})+(ev.type==='SS'||ev.type==='SC'?'\n'+T('stageNote'):'')+'\n'+JSON.stringify(msgBody(ev),null,2);}
+
+/* ---------- panels ---------- */
+function addLog(){renderStats();}
+function renderLog(){if(!logDirty)return;logDirty=false;const el=$('log'),list=[];
+  for(let i=EV.length-1;i>=0&&list.length<120;i--)if(evOn[EV[i].type])list.push(EV[i]);
+  if(!list.length){el.innerHTML='<li class="empty">'+T('logEmpty')+'</li>';return;}
+  el.innerHTML=list.map(ev=>{const d=ev.type==='SS'||ev.type==='SC'?`Seq${ev.seq} / S${ev.stage}`:ev.type==='WC'?'Completed':`${ev.uc} pcs · ${ev.car}`;
+    return `<li data-i="${ev.id}"${selEv&&selEv.id===ev.id?' class="sel"':''}><span class="t">${ev.t.toFixed(1)}s</span><span class="evc" style="background:var(--ev-${ev.type.toLowerCase()})">${CODE[ev.type]}</span>${T('eqShort')}${ev.e+1} <span class="mname">${EVT[ev.type]}</span>${ev.tx?'<span class="id">'+ev.tx+'</span> ':''}${d}</li>`;}).join('');}
+function renderTxbar(it){lastIt=it;
+  const ex=it?`${T('latest')}<span class="chip">${it.tx}</span> ${T('eqShort')}${it.eq+1} · ${it.units.join(' + ')}`:'';
+  $('txbar').innerHTML=`<span>${T('txRule')}</span><span style="color:var(--muted)">${ex}</span>`;
+  if(!selEv)renderJson();}
+
+function calc(){return S.eqs.slice(0,S.nEq).map(q=>{const seqs=q.seqs.slice(0,q.n).map(s=>({...s,eff:s.ct/(q.uc*s.stages),uph:Math.round(3600/s.ct*q.uc*s.stages)}));
+  const eff=Math.max(...seqs.map(s=>s.eff)), sum=seqs.reduce((a,s)=>a+s.eff,0);
+  return {uc:q.uc,seqs,eff,uph:Math.min(...seqs.map(s=>s.uph)),bal:sum/(eff*seqs.length)*100,st:seqs.reduce((a,s)=>a+s.stages,0)};});}
+const sl=(e,s)=>cols.map((c,k)=>c.e===e&&(s===undefined||c.s===s)?(M[k]||[]):[]).flat();
+function ubar(a){const tot=a.reduce((x,m)=>x+m.busy+m.blk+m.idle,0);if(!tot)return '<span class="unum">–</span>';
+  const b=a.reduce((x,m)=>x+m.busy,0)/tot*100,k=a.reduce((x,m)=>x+m.blk,0)/tot*100,i=Math.max(0,100-b-k);
+  return `<span class="ubar" title="${T('uBusy')} ${b.toFixed(0)}% · ${T('uBlk')} ${k.toFixed(0)}% · ${T('uIdle')} ${i.toFixed(0)}%"><i style="width:${b}%;background:var(--proc)"></i><i style="width:${k}%;background:var(--block)"></i><i style="width:${i}%;background:var(--line)"></i></span><span class="unum">${b.toFixed(0)}/${k.toFixed(0)}/${i.toFixed(0)}</span>`;}
+function buildGen(){const md=$('gMode');md.innerHTML='';
+  [['fill','mFill'],['fixed','mFixed'],['exp','mExp']].forEach(([v,k])=>{const b=document.createElement('button');b.type='button';b.textContent=T(k);b.setAttribute('aria-pressed',String(G.mode===v));
+    b.onclick=()=>{G.mode=v;nextArr=S.t;buildGen();renderStats();};md.appendChild(b);});
+  seg($('gBatch'),MAX_UC,()=>G.batch,v=>{G.batch=v;renderStats();});
+  const ia=$('gIat');ia.value=G.iat;ia.oninput=()=>{G.iat=+ia.value;nextArr=Math.min(nextArr,S.t+G.iat);renderStats();};
+  const cp=$('gCap');cp.value=G.cap;cp.oninput=()=>{G.cap=+cp.value;renderStats();};
+  const off=G.mode==='fill';ia.disabled=off;$('gBatch').querySelectorAll('button').forEach(b=>b.disabled=off);}
+function renderGen(lineUph){
+  $('gIatV').textContent=G.iat.toFixed(1)+' s';$('gCapV').textContent=capIn()+' pcs';
+  const r=arrRate(),m=T(G.mode==='fill'?'mFill':G.mode==='fixed'?'mFixed':'mExp'),rr=Math.round(r).toLocaleString(),u=lineUph.toLocaleString();
+  $('genSum').textContent=G.mode==='fill'?T('genSumFill',{c:capIn()}):T('genSum',{m,i:G.iat.toFixed(1),b:G.batch,r:rr});
+  let msg,cls='';if(G.mode==='fill')msg=T('gStatFill');
+  else if(r>lineUph*1.02){msg=T('gStatHi',{r:rr,u});cls='hi';}else if(r<lineUph*0.98){msg=T('gStatLo',{r:rr,u});cls='lo';}else{msg=T('gStatEq',{r:rr,u});cls='ok';}
+  const g=$('gStat');g.className='gstat '+cls;g.innerHTML=`<span class="gmsg">${msg}</span><span class="muted">${T('gSrcStat',{a:srcArrived,b:S.t>0?(srcBlk/S.t*100).toFixed(0):0})}</span>`;}
+function renderStats(){const E=calc();const lineUph=Math.min(...E.map(e=>e.uph)), mx=Math.max(...E.map(e=>e.eff)), sum=E.reduce((a,e)=>a+e.eff,0);
+  const bal=sum/(mx*E.length)*100, nSt=E.reduce((a,e)=>a+e.st,0);
+  BN=new Set(E.every(e=>e.uph===lineUph)?[]:E.map((e,i)=>e.uph===lineUph?i:-1).filter(i=>i>=0));updTabTags();
+  let rows='';E.forEach((e,i)=>{const tx=eqStat[i]?eqStat[i].tx:0;
+    rows+=`<tr class="eqrow"><td><b>${T('eq')}${i+1}</b>${BN.has(i)?'<span class="tag">'+T('bottleneck')+'</span>':''}</td><td>${e.uc}</td><td>${e.st}</td><td></td><td>${f3(e.eff)}</td><td>${e.uph.toLocaleString()}</td><td>${e.seqs.length>1?e.bal.toFixed(1)+'%':'–'}</td><td class="ucell">${ubar(sl(i))}</td><td>${tx}</td><td>${tx*e.uc}</td></tr>`;
+    e.seqs.forEach((s,k)=>{rows+=`<tr class="sub"><td>Seq ${k+1}</td><td></td><td>${s.stages}</td><td>${f3(s.ct)}s</td><td>${f3(s.eff)}</td><td>${s.uph.toLocaleString()}</td><td></td><td class="ucell">${ubar(sl(i,k))}</td><td></td><td></td></tr>`;});});
+  $('kpis').innerHTML=(()=>{const win=Math.min(S.t,60);outTimes=outTimes.filter(x=>x>S.t-60);const act=win>5?Math.round(outTimes.length/win*3600).toLocaleString():'–';
+    const wip=items.reduce((a,it)=>a+it.units.length,0)+bufs.slice(1).reduce((a,b)=>a+b.units.length,0);
+    return [[T('kTheo'),lineUph.toLocaleString()],[T('kAct'),act],[T('kArr'),G.mode==='fill'?'∞':Math.round(arrRate()).toLocaleString()],[T('kBal'),bal.toFixed(1)+'%'],[T('kWip'),wip],[T('kEq'),S.nEq+' / '+nSt]];})().map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('');
+  renderGen(lineUph);
+  $('formula').innerHTML=T('formula')+` = ${f3(sum)} ÷ (${f3(mx)} × ${E.length}) = <b>${bal.toFixed(1)}%</b>`;}
+
+let last=performance.now();
+function loop(now){const dt=Math.min((now-last)/1000,0.05);last=now;
+  if(S.playing){let r=dt*S.speed;while(r>0){const s=Math.min(r,0.02);step(s);r-=s;if(S.stepTo&&evN>=S.stepTo){stepDone();pushHist($('stepInfo').innerHTML);break;}}}draw();if(now-lastStatsAt>500){lastStatsAt=now;renderStats();renderLog();}requestAnimationFrame(loop);}
+readColors();
+const mq=matchMedia('(prefers-color-scheme: dark)');mq.addEventListener&&mq.addEventListener('change',readColors);
+new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+I18N.on(()=>{$('play').textContent=S.playing?T('pause'):T('play');[...$('eqSel').options].forEach(o=>o.textContent=o.value+T('uEq'));$('stepInfo').dataset.hint=T('stepHint');buildEditor();buildGen();buildEvUI();renderStats();logDirty=true;renderLog();renderTxbar(lastIt);renderJson();});
+$('play').textContent=T('pause');
+
+/* ---------- password lock for setup panels ---------- */
+const LOCK_H='08d1dd8729a84c3e66e1ea550089f9e85db56c0c95c81687437130b0639135dd';let setupUnlocked=false,pendingDet=null;
+async function lockHash(v){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('lock:'+v));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}catch(e){return '';}}
+['eqCfg','genCfg'].forEach(id=>{const d=$(id);d.querySelector('summary').addEventListener('click',ev=>{if(window.cfxLock.unlocked||d.open)return;ev.preventDefault();pendingDet=d;$('lkInput').value='';$('lkErr').textContent='';$('lkModal').hidden=false;$('lkInput').focus();});});
+$('lkCancel').onclick=()=>{$('lkModal').hidden=true;};
+$('lkModal').addEventListener('click',e=>{if(e.target.id==='lkModal')$('lkModal').hidden=true;});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('lkModal').hidden=true;});
+$('lkForm').onsubmit=async e=>{e.preventDefault();if(await window.cfxLock.check($('lkInput').value)){window.cfxLock.unlocked=true;$('lkModal').hidden=true;if(pendingDet)pendingDet.open=true;}else{$('lkErr').textContent=T('pwWrong');$('lkInput').select();}};
+buildEditor();buildGen();buildEvUI();reset();requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>
