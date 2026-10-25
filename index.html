@@ -563,7 +563,7 @@ const T=I18N.t;let lastIt=null;
 const MAX_EQ=10, MAX_SEQ=5, MAX_ST=6, MAX_UC=8;
 const mkEq=(uc,seqs)=>({uc,n:seqs.length,seqs:seqs.concat(Array.from({length:MAX_SEQ-seqs.length},()=>({stages:1,ct:2.5})))});
 const S={nEq:3, speed:1.5, playing:true, t:0, cur:0,
-  eqs:[mkEq(2,[{stages:2,ct:5},{stages:1,ct:2.5}]), mkEq(4,[{stages:1,ct:5}]), mkEq(1,[{stages:2,ct:2.5}]), mkEq(2,[{stages:1,ct:2.5}]), mkEq(1,[{stages:1,ct:1.5}])]
+  eqs:[mkEq(2,[{stages:2,ct:5},{stages:1,ct:2.5}]), mkEq(4,[{stages:1,ct:6}]), mkEq(1,[{stages:2,ct:2.75}]), mkEq(2,[{stages:1,ct:2.5}]), mkEq(1,[{stages:1,ct:1.5}])]
     .concat(Array.from({length:MAX_EQ-5},()=>mkEq(1,[{stages:1,ct:1.5}])))};
 let hist=[], hIdx=-1;
 let EV=[], POP=[], VRS=[], laneBusy=[], evN=0, carN=0, vidN=0, selEv=null, logDirty=true;
