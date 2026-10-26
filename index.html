@@ -129,11 +129,11 @@ pre.json{margin:0;padding:12px;border:1px solid var(--line);border-radius:4px;ba
 .cfx-wrap h3{font-size:13px;margin:0;font-weight:600}
 .cfx-wrap .cfx-body{padding:0}
 .cmpwrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px}
-table.cmp{min-width:820px;font-size:12px;line-height:1.6}
+table.cmp{min-width:1180px;font-size:12px;line-height:1.6}
 .cmp th,.cmp td{text-align:left;white-space:normal;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
 .cmp tbody tr:last-child>*{border-bottom:0}
-.cmp thead th{font:600 12px var(--mono);color:var(--accent);background:var(--panel);width:22%}
-.cmp thead th:first-child{width:12%}
+.cmp thead th{font:600 12px var(--mono);color:var(--accent);background:var(--panel);width:15%}
+.cmp thead th:first-child{width:10%}
 .cmp tbody th{font:600 12px var(--mono);color:var(--fg);background:var(--panel)}
 .cmp q{color:var(--muted);font-style:italic}
 .na{color:var(--muted)}
@@ -278,39 +278,22 @@ tr.eqrow td{background:var(--panel)}
   </div>
 
   <details class="box cfx" open>
-    <summary id="cfgCfxTitle">CFX 定义说明：UnitsArrived · WorkStarted · WorkCompleted · UnitsDeparted</summary>
+    <summary id="cfgCfxTitle">CFX 定义说明：UA · WS · WSS · WSC · WC · UD</summary>
     <div class="cfx-wrap">
       <div class="flow" id="cfgFlow"></div>
       <h3 data-i18n="hCmp">官方定义对照（CFX.Production）</h3>
       <div class="cmpwrap"><table class="cmp">
-        <thead><tr><th></th><th>UnitsArrived</th><th>WorkStarted</th><th>WorkCompleted</th><th>UnitsDeparted</th></tr></thead>
+        <thead><tr><th></th><th>UnitsArrived</th><th>WorkStarted</th><th>WorkStageStarted</th><th>WorkStageCompleted</th><th>WorkCompleted</th><th>UnitsDeparted</th></tr></thead>
         <tbody>
-          <tr><th data-i18n="rWhen">发送时机</th>
-            <td><q>Sent when production units physically arrives at a process endpoint, prior to any work or other activity commencing.</q><br><span data-i18n="aWhen"></span></td>
-            <td><span class="na" data-i18n="wsNoDesc"></span><br><span data-i18n="wsWhen"></span></td>
-            <td><q>Sent by a process endpoint when all work has been completed at a process endpoint.</q><br><span data-i18n="cWhen"></span></td>
-            <td><q>Sent by a process endpoint when units physically depart from a process endpoint. This does not imply any information about any activity that may have taken place.</q><br><span data-i18n="dWhen"></span></td></tr>
-          <tr><th>TransactionID</th>
-            <td><span class="na" data-i18n="na"></span></td>
-            <td><q>Transaction ID used to attach events and data during subsequent processing, until WorkCompleted</q><br><span id="cfgDef1"></span></td>
-            <td><q>Related Transaction ID specified previously by WorkStarted Message.</q><br><span data-i18n="cTx"></span></td>
-            <td><span class="na" data-i18n="na"></span></td></tr>
-          <tr><th>UnitCount</th>
-            <td><q>The number of individual production units</q><br><span data-i18n="aUc"></span></td>
-            <td><q>The number of individual production units associated with this transaction. May be more than 1 in the case of a carrier or panel of multiple PCB's.</q><br><span id="cfgDef2"></span></td>
-            <td><span class="opt" data-i18n="opt"></span> <span data-i18n="cUc"></span></td>
-            <td><q>The number of individual production units</q><br><span data-i18n="dUc"></span></td></tr>
-          <tr><th>Units</th>
-            <td><span class="opt" data-i18n="opt"></span> <q>An optional list of structures that identify each specific instance of production unit that arrived (if known).</q><br><span data-i18n="aUnits"></span></td>
-            <td><q>Data that identifies each specific instance of production unit with a carrier or panel.</q><br><span id="cfgDef3"></span></td>
-            <td><span class="opt" data-i18n="opt"></span> <span data-i18n="cUnits"></span></td>
-            <td><span class="opt" data-i18n="opt"></span> <q>An optional list of structures that identify each specific instance of production unit that arrived (if known).</q><br><span data-i18n="dUnits"></span></td></tr>
-          <tr><th>Primary / Hermes Identifier</th>
-            <td data-i18n="yes"></td><td data-i18n="yes"></td><td><span class="opt" data-i18n="opt"></span> <span data-i18n="yes"></span></td><td data-i18n="yes"></td></tr>
-          <tr><th>Lane</th>
-            <td><q>Lane identifier. Null if no specific lane</q></td><td><q>Lane identifier. Null if no specific lane</q></td><td><span class="na" data-i18n="na"></span></td><td><q>Lane identifier. Null if no specific lane</q></td></tr>
-          <tr><th>Result</th>
-            <td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><q>An enumeration indicating the overall result of the work transaction.</q></td><td><span class="na" data-i18n="na"></span></td></tr>
+          <tr><th data-i18n="rWhen"></th><td><q>Sent when production units physically arrives at a process endpoint, prior to any work or other activity commencing.</q><br><span data-i18n="aWhen"></span></td><td><span class="na" data-i18n="wsNoDesc"></span><br><span data-i18n="wsWhen"></span></td><td><q>Sent by a process endpoint when the work-stage for a unit or group of units starts</q><br><span data-i18n="ssWhen"></span></td><td><q>Sent by a process endpoint to indicate that a stage has been completed.</q><br><span data-i18n="scWhen"></span></td><td><q>Sent by a process endpoint when all work has been completed at a process endpoint.</q><br><span data-i18n="cWhen"></span></td><td><q>Sent by a process endpoint when units physically depart from a process endpoint. This does not imply any information about any activity that may have taken place.</q><br><span data-i18n="dWhen"></span></td></tr>
+          <tr><th>TransactionID</th><td><span class="na" data-i18n="na"></span></td><td><q>Transaction ID used to attach events and data during subsequent processing, until WorkCompleted</q><br><span id="cfgDef1"></span></td><td><q>Related Transaction ID specified previously by WorkStarted Message</q><br><span data-i18n="cTx"></span></td><td><q>Related Transaction ID specified previously by WorkStarted Message</q><br><span data-i18n="cTx"></span></td><td><q>Related Transaction ID specified previously by WorkStarted Message.</q><br><span data-i18n="cTx"></span></td><td><span class="na" data-i18n="na"></span></td></tr>
+          <tr><th>Stage</th><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><q>The stage name or number</q><br><span data-i18n="stInfo"></span></td><td><q>The stage name or number</q><br><span data-i18n="stInfo"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td></tr>
+          <tr><th>UnitCount</th><td><q>The number of individual production units</q><br><span data-i18n="aUc"></span></td><td><q>The number of individual production units associated with this transaction. May be more than 1 in the case of a carrier or panel of multiple PCB's.</q><br><span id="cfgDef2"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="opt" data-i18n="opt"></span> <span data-i18n="cUc"></span></td><td><q>The number of individual production units</q><br><span data-i18n="dUc"></span></td></tr>
+          <tr><th>Units</th><td><span class="opt" data-i18n="opt"></span> <q>An optional list of structures that identify each specific instance of production unit that arrived (if known).</q><br><span data-i18n="aUnits"></span></td><td><q>Data that identifies each specific instance of production unit with a carrier or panel.</q><br><span id="cfgDef3"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="opt" data-i18n="opt"></span> <span data-i18n="cUnits"></span></td><td><span class="opt" data-i18n="opt"></span> <q>An optional list of structures that identify each specific instance of production unit that arrived (if known).</q><br><span data-i18n="dUnits"></span></td></tr>
+          <tr><th>Primary / Hermes Identifier</th><td><span data-i18n="yes"></span></td><td><span data-i18n="yes"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="opt" data-i18n="opt"></span> <span data-i18n="yes"></span></td><td><span data-i18n="yes"></span></td></tr>
+          <tr><th>Lane</th><td><q>Lane identifier. Null if no specific lane</q></td><td><q>Lane identifier. Null if no specific lane</q></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><q>Lane identifier. Null if no specific lane</q></td></tr>
+          <tr><th>Result</th><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><q>An enumeration indicating the overall result of the Work transaction</q><br><span data-i18n="scRes"></span></td><td><q>An enumeration indicating the overall result of the work transaction.</q></td><td><span class="na" data-i18n="na"></span></td></tr>
+          <tr><th>PerformanceImpacts</th><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span data-i18n="perf"></span></td><td><span data-i18n="perf"></span></td><td><span class="na" data-i18n="na"></span></td></tr>
         </tbody>
       </table></div>
       <div class="cfx-body">
@@ -321,7 +304,7 @@ tr.eqrow td{background:var(--panel)}
         <div>
           <h3 data-i18n="hJson">对照本页最新一笔交易的 WorkStarted 讯息</h3>
           <pre class="json" id="json"></pre>
-          <p class="src"><span data-i18n="src">来源：</span><a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_UnitsArrived.htm" target="_blank" rel="noopener">UnitsArrived</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkStarted.htm" target="_blank" rel="noopener">WorkStarted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkCompleted.htm" target="_blank" rel="noopener">WorkCompleted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_UnitsDeparted.htm" target="_blank" rel="noopener">UnitsDeparted</a></p>
+          <p class="src"><span data-i18n="src">来源：</span><a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_UnitsArrived.htm" target="_blank" rel="noopener">UnitsArrived</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkStarted.htm" target="_blank" rel="noopener">WorkStarted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkStageStarted.htm" target="_blank" rel="noopener">WorkStageStarted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkStageCompleted.htm" target="_blank" rel="noopener">WorkStageCompleted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkCompleted.htm" target="_blank" rel="noopener">WorkCompleted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_UnitsDeparted.htm" target="_blank" rel="noopener">UnitsDeparted</a></p>
         </div>
       </div>
     </div>
@@ -388,6 +371,10 @@ const D={
   lgTray:['托盘 = 1 次投入','Tray = 1 load'], lgUnit:['产品','Unit'], lgDone:['已完成','Done'], lgProc:['加工中','Processing'], lgBlock:['等下一站','Waiting for next'], lgBuf:['投入区：发生器送来的产品','Input area: units from the source'], lgEmpty:['空格 = 还没收满 UnitCount','Empty pocket = UnitCount not yet filled'],
   dgTitle:['CFX 讯息流程图：常规设备 vs. 多 Stage 设备','CFX message flow: standard vs. multi-stage machine'], dgSrc:['draw.io 原始档：','draw.io source file: '],
   lkTitle:['输入密码以修改设定','Enter password to change settings'],
+  ssWhen:['某道工序（Stage）开始加工。','A work stage starts for the unit or group.'], scWhen:['该道工序完成。','That stage is finished.'],
+  stInfo:['结构含 StageSequence（顺序）、StageName（名称）、StageType（如 Work）。','Holds StageSequence (order), StageName and StageType (e.g. Work).'],
+  scRes:['这道工序的结果；官方文字写的是整笔 Work 交易。','Result for this stage; the official text says “Work transaction”.'],
+  perf:['CFX 1.6 新增：影响产能的原因，JSON 范例为 Cause 清单（例如 LowFeederSpeed）。','Added in CFX 1.6: causes that affected performance; the JSON example lists Cause values (e.g. LowFeederSpeed).'],
   step:['下一步','Step'], back:['上一步','Back'], stepMore:['（同一时刻共 {n} 则，完整内容见讯息纪录）','({n} messages at the same moment; see the message log)'], stepInfo:['第 {n} 步 · {t}s · {eq} · {m} {tx}','Step {n} · {t}s · {eq} · {m} {tx}'], stepHint:['按「下一步」会播放到下一个 CFX 讯息发出后暂停。','Step plays until the next CFX message is sent, then pauses.'],
   hCap:['产能与产出','Capacity & output'], thEq:['设备 / 工序','Equipment / Seq'], thEff:['等效CT','Eff. CT'], thBal:['内部平衡','Internal balance'],
   thTx:['TX 笔数','TX count'], thOut:['产出 pcs','Output pcs'], ftLine:['线体完成','Line output'],
@@ -455,8 +442,8 @@ const DEFS={
 zh:{
   title:'设备 · 工序 · 工站 投料动画',
   intro:'一台**设备**内有多道 **Sequence（工序）**前后串联，每道工序可有多个 **Stage（工站）**并行，用来平衡产能。\n设备每处理一次产生 1 笔 **TransactionID**，包含 **UnitCount** 颗产品；各设备的 UnitCount 可以不同：下一台的第一道工序收满自己的 UnitCount 才开始加工，收不下的产品留在上一台，形成堵塞。',
-  cfxTitle:'CFX 定义说明：UnitsArrived · WorkStarted · WorkCompleted · UnitsDeparted',
-  cfxFlow:'UnitsArrived（到达）→ WorkStarted（TransactionID 开始）→ WorkCompleted（TransactionID 结束）→ UnitsDeparted（离开）',
+  cfxTitle:'CFX 定义说明：UnitsArrived · WorkStarted · WorkStageStarted · WorkStageCompleted · WorkCompleted · UnitsDeparted',
+  cfxFlow:'UnitsArrived（到达）→ WorkStarted（TransactionID 开始）→ WorkStageStarted（工序开始）→ WorkStageCompleted（工序完成）→ WorkCompleted（TransactionID 结束）→ UnitsDeparted（离开）',
   def1:'从 WorkStarted 到 WorkCompleted 这段加工使用同一个 TransactionID。',
   def2:'这笔交易关联的产品颗数。',
   def3:'逐颗列出载具或拼板中的每个产品。',
@@ -467,13 +454,14 @@ zh:{
     '**WorkCompleted 的 UnitCount 是选填。**只有 WorkStarted 当时拿不到识别资讯时才需补上，正常以 WorkStarted 为准。',
     '**UnitsArrived / UnitsDeparted 没有 TransactionID。**它们只记录实体进出设备，要靠 PrimaryIdentifier / HermesIdentifier 和 WorkStarted / WorkCompleted 对上。',
     '**只有 WorkStarted / WorkCompleted 的 UnitCount 绑定交易。**Arrived / Departed 的 UnitCount 只是实体颗数；同一托盘进出同一台设备时，四个讯息的数值应该一致。',
-    '**UnitsDeparted 不代表加工完成或良品。**官方注明不隐含任何加工资讯，结果要看 WorkCompleted 的 Result。'
+    '**UnitsDeparted 不代表加工完成或良品。**官方注明不隐含任何加工资讯，结果要看 WorkCompleted 的 Result。',
+    '**WorkStageStarted / WorkStageCompleted 只带 TransactionID 和 Stage。**同一托盘换下一道工序只报 WSS / WSC，不会再报 WS；并行工站放的是不同托盘，各自一笔 TransactionID。'
   ]},
 en:{
   title:'Equipment · Sequence · Stage Loading Animation',
   intro:'Each **equipment** runs several **Sequences** in series, and each sequence can have several parallel **Stages** to balance capacity.\nEach equipment cycle creates 1 **TransactionID** covering **UnitCount** units. UnitCount can differ per equipment: the next equipment\'s first sequence starts only when it has its own UnitCount; units it cannot take stay on the previous equipment and block it.',
-  cfxTitle:'CFX definitions: UnitsArrived · WorkStarted · WorkCompleted · UnitsDeparted',
-  cfxFlow:'UnitsArrived (arrive) → WorkStarted (TransactionID begins) → WorkCompleted (TransactionID ends) → UnitsDeparted (depart)',
+  cfxTitle:'CFX definitions: UnitsArrived · WorkStarted · WorkStageStarted · WorkStageCompleted · WorkCompleted · UnitsDeparted',
+  cfxFlow:'UnitsArrived (arrive) → WorkStarted (TransactionID begins) → WorkStageStarted (stage starts) → WorkStageCompleted (stage done) → WorkCompleted (TransactionID ends) → UnitsDeparted (depart)',
   def1:'One TransactionID covers the processing from WorkStarted to WorkCompleted.',
   def2:'Number of units tied to this transaction.',
   def3:'Lists every unit in the carrier or panel.',
@@ -484,7 +472,8 @@ en:{
     '**UnitCount in WorkCompleted is optional.** It is only needed when identifiers were unknown at WorkStarted; normally WorkStarted is the reference.',
     '**UnitsArrived / UnitsDeparted have no TransactionID.** They only record units physically entering and leaving; match them to WorkStarted / WorkCompleted by PrimaryIdentifier / HermesIdentifier.',
     '**Only the UnitCount in WorkStarted / WorkCompleted is tied to a transaction.** In Arrived / Departed it is a physical count; for one tray through one equipment, all four values should match.',
-    '**UnitsDeparted does not mean the work finished or passed.** The official text says it implies nothing about activity; check Result in WorkCompleted.'
+    '**UnitsDeparted does not mean the work finished or passed.** The official text says it implies nothing about activity; check Result in WorkCompleted.',
+    '**WorkStageStarted / WorkStageCompleted carry only TransactionID and Stage.** A tray moving to the next stage reports only WSS / WSC, never a new WS; parallel stages hold different trays, each with its own TransactionID.'
   ]}
 };
 const DEFAULT_H='7dbfd21c3e9d8f351f0fded60be7bab3763156aa4bd7cc60da69ac497dd5060d';
@@ -833,14 +822,15 @@ function buildEvUI(){const lg=$('evLegend');lg.innerHTML=Object.keys(EVT).map(k=
   const f=$('evFilter');f.innerHTML='';Object.keys(EVT).forEach(k=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed',String(!!evOn[k]));
     b.innerHTML=`<span class="evc" style="background:var(--ev-${k.toLowerCase()})">${CODE[k]}</span>${EVT[k]}`;b.onclick=()=>{evOn[k]=evOn[k]?0:1;b.setAttribute('aria-pressed',String(!!evOn[k]));logDirty=true;renderLog();};f.appendChild(b);});}
 $('log').addEventListener('click',e=>{const li=e.target.closest('li[data-i]');if(!li)return;selEv=EV.find(x=>x.id===+li.dataset.i)||null;logDirty=true;renderLog();renderJson();});
-function msgBody(ev){const units=ev.units.map((u,i)=>({UnitIdentifier:u,PositionNumber:i+1,PositionName:'Pos'+(i+1)}));const st={StageSequence:ev.seq,StageName:'Seq'+ev.seq+'-S'+ev.stage};
+function msgBody(ev){const units=ev.units.map((u,i)=>({UnitIdentifier:u,PositionNumber:i+1,PositionName:'Pos'+(i+1)}));const st={StageSequence:ev.seq,StageName:'Seq'+ev.seq+'-S'+ev.stage,StageType:'Work'};
   switch(ev.type){case 'UA':case 'UD':return {Lane:null,PrimaryIdentifier:ev.car,UnitCount:ev.uc,Units:units};
     case 'WS':return {TransactionID:ev.tx,Lane:null,PrimaryIdentifier:ev.car,UnitCount:ev.uc,Units:units};
-    case 'SS':case 'SC':return {TransactionID:ev.tx,Stage:st};
+    case 'SS':return {TransactionID:ev.tx,Stage:st};
+    case 'SC':return {TransactionID:ev.tx,Stage:st,Result:'Completed'};
     case 'WC':return {TransactionID:ev.tx,Result:'Completed'};}}
 function renderJson(){const j=$('json');if(!j)return;let ev=selEv;if(!ev)for(let i=EV.length-1;i>=0;i--)if(EV[i].type==='WS'){ev=EV[i];break;}
   if(!ev){j.textContent='';return;}
-  j.textContent=T('jsonCmt',{e:ev.e+1,m:EVT[ev.type],t:ev.t.toFixed(1)})+(ev.type==='SS'||ev.type==='SC'?'\n'+T('stageNote'):'')+'\n'+JSON.stringify(msgBody(ev),null,2);}
+  j.textContent=T('jsonCmt',{e:ev.e+1,m:EVT[ev.type],t:ev.t.toFixed(1)})+'\n'+JSON.stringify(msgBody(ev),null,2);}
 
 /* ---------- panels ---------- */
 function addLog(){renderStats();}
