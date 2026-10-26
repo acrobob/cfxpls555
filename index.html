@@ -81,7 +81,7 @@ th:first-child,td:first-child{text-align:left}
 th{font-weight:500;color:var(--muted);font-size:12px}
 .tag{font-size:11px;color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:0 5px;margin-left:6px}
 tfoot td{font-weight:600}
-.log{list-style:none;margin:0;padding:0;font:12px/19px var(--mono);max-height:150px;overflow:auto}
+.log{list-style:none;margin:0;padding:0;font:12px/19px var(--mono);height:150px;overflow:hidden}
 .log li{box-sizing:border-box;height:30px;padding:5px 14px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .log li:last-child{border-bottom:0}
 .log .t{color:var(--muted);margin-right:8px}
@@ -837,7 +837,7 @@ function renderJson(){const j=$('json');if(!j)return;let ev=selEv;if(!ev)for(let
 /* ---------- panels ---------- */
 function addLog(){renderStats();}
 function renderLog(){if(!logDirty)return;logDirty=false;const el=$('log'),list=[];
-  for(let i=EV.length-1;i>=0&&list.length<120;i--)if(evOn[EV[i].type])list.push(EV[i]);
+  for(let i=EV.length-1;i>=0&&list.length<5;i--)if(evOn[EV[i].type])list.push(EV[i]);
   if(!list.length){el.innerHTML='<li class="empty">'+T('logEmpty')+'</li>';return;}
   el.innerHTML=list.map(ev=>{const d=ev.type==='SS'||ev.type==='SC'?`Seq${ev.seq} / S${ev.stage}`:ev.type==='WC'?'Completed':`${ev.uc} pcs · ${ev.car}`;
     return `<li data-i="${ev.id}"${selEv&&selEv.id===ev.id?' class="sel"':''}><span class="t">${ev.t.toFixed(1)}s</span><span class="evc" style="background:var(--ev-${ev.type.toLowerCase()})">${CODE[ev.type]}</span>${T('eqShort')}${ev.e+1} <span class="mname">${EVT[ev.type]}</span>${ev.tx?'<span class="id">'+ev.tx+'</span> ':''}${d}</li>`;}).join('');}
