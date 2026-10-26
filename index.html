@@ -569,6 +569,7 @@ let cols=[], M=[], eqStat=[], items=[], bufs=[], logItems=[], W=0, H=0, G0=null,
 const GX=80, GIO=28, ROW=60, PAD=4, UGAP=3, EP=10, BW=64, HEAD=50, BU=8, BG=3;
 const FONT=getComputedStyle(document.body).fontFamily;
 const pad=(n,l)=>String(n).padStart(l,'0');
+const uuid=()=>{try{if(crypto.randomUUID)return crypto.randomUUID();}catch(e){}return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);});};
 const f3=v=>(+v.toFixed(3)).toString();
 const ucOf=e=>S.eqs[e].uc;
 const G={mode:'fixed',iat:1.2,batch:1,cap:12};
@@ -682,7 +683,7 @@ function step(dt){S.t+=dt;const V=320,N=cols.length,g=G0;
   for(let k=N-1;k>=0;k--){M[k].forEach(m=>{const it=m.occ;if(!it||it.st!=='blocked'||it.wcAt)return;const c=cols[k];
     if(!c.last){const nj=M[k+1].findIndex(n=>!n.occ);if(nj<0)return;
       m.occ=null;M[k+1][nj].occ=it;it.k=k+1;it.j=nj;it.st='move';const p=mPos(k+1,nj);route(it,p.x,p.y,cols[k+1].x0);return;}
-    if(c.e===S.nEq-1){it.pend=[{type:'UD',x:g.eqBox[c.e].x1,e:c.e,o:{k:it.k,j:it.j,tx:it.tx,car:it.car,vid:it.vid,units:it.units.slice()}}];m.occ=null;it.st='toOut';it.done=true;it.k=-1;route(it,g.outX,it.y,g.eqBox[c.e].x1+4);return;}
+    if(c.e===S.nEq-1){it.pend=[{type:'UD',x:g.eqBox[c.e].x1,e:c.e,o:{k:it.k,j:it.j,tx:it.tx,txg:it.txg,car:it.car,vid:it.vid,units:it.units.slice()}}];m.occ=null;it.st='toOut';it.done=true;it.k=-1;route(it,g.outX,it.y,g.eqBox[c.e].x1+4);return;}
     const e2=c.e+1,k1=cols.findIndex(x=>x.e===e2&&x.first),uc2=ucOf(e2);
     while(it.units.length){let j=M[k1].findIndex(n=>n.occ&&n.occ.st==='load'&&n.occ.units.length+n.occ.incoming<uc2);
       if(j<0)j=M[k1].findIndex(n=>!n.occ);if(j<0)break;
@@ -692,7 +693,7 @@ function step(dt){S.t+=dt;const V=320,N=cols.length,g=G0;
         VRS.push({vid:L.vid,e:e2,lane:ln,ua:S.t,ws:null,wc:null,ud:null,ev:[]});M[k1][j].occ=L;items.push(L);}
       const n=Math.min(it.units.length,uc2-L.units.length-L.incoming),chunk=it.units.splice(0,n);L.incoming+=n;if(it.units.length)it.uc=it.units.length;
       const P={x:it.x,y:it.y,path:[],st:'xfer',k:-1,j:-1,units:chunk,uc:n,target:L,done:false,a:0,
-        pend:[{type:'UD',x:g.eqBox[c.e].x1,e:c.e,o:{k:it.k,j:it.j,tx:it.tx,car:it.car,vid:it.vid,units:chunk.slice(),partial:it.units.length>0}},
+        pend:[{type:'UD',x:g.eqBox[c.e].x1,e:c.e,o:{k:it.k,j:it.j,tx:it.tx,txg:it.txg,car:it.car,vid:it.vid,units:chunk.slice(),partial:it.units.length>0}},
               {type:'UA',x:g.eqBox[e2].x0,e:e2,o:{k:k1,j,tx:null,car:L.car,vid:L.vid,units:chunk.slice()}}]};
       route(P,p.x,p.y,(g.eqBox[c.e].x1+g.eqBox[e2].x0)/2);items.push(P);}
     if(!it.units.length){m.occ=null;it.gone=true;}});}
@@ -709,7 +710,7 @@ function step(dt){S.t+=dt;const V=320,N=cols.length,g=G0;
     if(it.pend&&it.pend.length)it.pend=it.pend.filter(p=>{if(it.x>=p.x-0.01){emit(p.type,p.o,p.e);return false;}return true;});
     if(it.path.length)return;
     if(it.wcAt&&S.t>=it.wcAt){it.wcAt=0;const c=cols[it.k];eqStat[c.e].tx++;emit('WC',it,c.e);addLog(it,c.e);}
-    if(it.st==='move'){it.st='proc';it.t=0;const c=cols[it.k];if(c.first){it.tx='TX-'+pad(++txN,5);renderTxbar(it);emit('WS',it,c.e,it.x,it.y);}emit('SS',it,c.e,it.x,it.y);}
+    if(it.st==='move'){it.st='proc';it.t=0;const c=cols[it.k];if(c.first){it.tx='TX-'+pad(++txN,5);it.txg=uuid();renderTxbar(it);emit('WS',it,c.e,it.x,it.y);}emit('SS',it,c.e,it.x,it.y);}
     else if(it.st==='proc'){it.t+=dt;const c=cols[it.k];if(it.t>=c.q.ct){it.st='blocked';emit('SC',it,c.e,it.x,it.y);if(c.last)it.wcAt=S.t+0.3;}}
     else if(it.st==='xfer'){const L=it.target;L.units.push(...it.units);L.incoming-=it.units.length;it.gone=true;if(L.units.length>=L.uc&&L.st==='load'){L.st='move';}}
     else if(it.st==='toOut')it.a+=dt;});
@@ -802,7 +803,7 @@ function drawPulses(){const nr=performance.now();
     ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.arc(f.tx,f.ty,3.5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;});}
 /* ---------- CFX events ---------- */
 function emit(type,it,e,x,y){const c=it.k>=0?cols[it.k]:null;
-  const ev={id:++evN,t:S.t,type,e,tx:it.tx,car:it.car,units:it.units.slice(),uc:it.units.length,seq:c?c.s+1:null,stage:it.j+1};
+  const ev={id:++evN,t:S.t,type,e,tx:it.tx,txg:it.txg,car:it.car,units:it.units.slice(),uc:it.units.length,seq:c?c.s+1:null,stage:it.j+1};
   EV.push(ev);if(EV.length>500)EV.shift();logDirty=true;
   const v=VRS.find(r=>r.vid===it.vid);if(v){v.ev.push({t:S.t,type});if(type==='WS')v.ws=S.t;if(type==='WC')v.wc=S.t;if(type==='UD'&&!it.partial){v.ud=S.t;if(laneBusy[e])laneBusy[e][v.lane]=false;}}
   if(G0&&it.k>=0){const k=it.k,j=it.j,key=(type==='SS'||type==='SC')?type+':'+k+':'+j:type+':'+e;
@@ -829,13 +830,13 @@ function buildEvUI(){const lg=$('evLegend');lg.innerHTML=Object.keys(EVT).map(k=
 $('log').addEventListener('click',e=>{const li=e.target.closest('li[data-i]');if(!li)return;selEv=EV.find(x=>x.id===+li.dataset.i)||null;logDirty=true;renderLog();renderJson();});
 function msgBody(ev){const units=ev.units.map((u,i)=>({UnitIdentifier:u,PositionNumber:i+1,PositionName:'Pos'+(i+1)}));const st={StageSequence:ev.seq,StageName:'Seq'+ev.seq+'-S'+ev.stage,StageType:'Work'};
   switch(ev.type){case 'UA':case 'UD':return {Lane:null,PrimaryIdentifier:ev.car,UnitCount:ev.uc,Units:units};
-    case 'WS':return {TransactionID:ev.tx,Lane:null,PrimaryIdentifier:ev.car,UnitCount:ev.uc,Units:units};
-    case 'SS':return {TransactionID:ev.tx,Stage:st};
-    case 'SC':return {TransactionID:ev.tx,Stage:st,Result:'Completed'};
-    case 'WC':return {TransactionID:ev.tx,Result:'Completed'};}}
+    case 'WS':return {TransactionID:ev.txg||ev.tx,Lane:null,PrimaryIdentifier:ev.car,UnitCount:ev.uc,Units:units};
+    case 'SS':return {TransactionID:ev.txg||ev.tx,Stage:st};
+    case 'SC':return {TransactionID:ev.txg||ev.tx,Stage:st,Result:'Completed'};
+    case 'WC':return {TransactionID:ev.txg||ev.tx,Result:'Completed'};}}
 function renderJson(){const j=$('json');if(!j)return;let ev=selEv;if(!ev)for(let i=EV.length-1;i>=0;i--)if(EV[i].type==='WS'){ev=EV[i];break;}
   if(!ev){j.textContent='';return;}
-  j.textContent=T('jsonCmt',{e:ev.e+1,m:EVT[ev.type],t:ev.t.toFixed(1)})+'\n'+JSON.stringify(msgBody(ev),null,2);}
+  j.textContent=T('jsonCmt',{e:ev.e+1,m:EVT[ev.type],t:ev.t.toFixed(1)})+(ev.tx?' · '+ev.tx:'')+'\n'+JSON.stringify(msgBody(ev),null,2);}
 
 /* ---------- panels ---------- */
 function addLog(){renderStats();}
