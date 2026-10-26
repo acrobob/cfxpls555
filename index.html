@@ -141,6 +141,11 @@ table.cmp{min-width:1180px;font-size:12px;line-height:1.6}
 .cmp thead th:first-child{width:10%}
 .cmp tbody th{font:600 12px var(--mono);color:var(--fg);background:var(--panel)}
 .cmp q{color:var(--muted);font-style:italic}
+table.cmp.stg{min-width:760px}
+.cmp.stg thead th{width:auto}
+.cmp.stg thead th:first-child{width:14%}
+.cmp.stg code{font-size:12px}
+.stgnote{margin:0;font-size:13px;line-height:1.7;padding:10px 12px;border:1px solid var(--line);border-radius:4px;background:var(--panel)}
 .na{color:var(--muted)}
 .opt{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 4px;color:var(--muted)}
 .hdr{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
@@ -305,6 +310,17 @@ tr.eqrow td{background:var(--panel)}
           <tr><th>PerformanceImpacts</th><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span data-i18n="perf"></span></td><td><span data-i18n="perf"></span></td><td><span class="na" data-i18n="na"></span></td></tr>
         </tbody>
       </table></div>
+      <h3 data-i18n="hStage">Stage 结构定义（CFX.Structures.Stage）</h3>
+      <div class="cmpwrap"><table class="cmp stg">
+        <thead><tr><th></th><th data-i18n="sdOff">官方原文</th><th data-i18n="sdMean">说明</th><th data-i18n="sdEx">本页 Machine - 1 的报法</th></tr></thead>
+        <tbody>
+          <tr><th>Stage</th><td><q>A data structure that represents a work area or step within a production related endpoint through which production units flow</q></td><td><span data-i18n="sdCls"></span></td><td><code>Seq1 / S1、Seq1 / S2、Seq2 / S1</code></td></tr>
+          <tr><th>StageSequence</th><td><q>Sequence of this stage in the machine</q></td><td><span data-i18n="sdSeq"></span></td><td><code>1、1、2</code></td></tr>
+          <tr><th>StageName</th><td><q>A friendly name for this stage</q></td><td><span data-i18n="sdName"></span></td><td><code>Seq1-S1、Seq1-S2、Seq2-S1</code></td></tr>
+          <tr><th>StageType</th><td><q>An enumeration indicating the purpose of this particular stage</q></td><td><span data-i18n="sdType"></span></td><td><code>Work</code></td></tr>
+        </tbody>
+      </table></div>
+      <p class="stgnote" data-i18n="sdNote"></p>
       <div class="cfx-body">
         <div>
           <h3 id="cfgNotesTitle"></h3>
@@ -380,6 +396,12 @@ const D={
   stInfo:['结构含 StageSequence（顺序）、StageName（名称）、StageType（如 Work）。','Holds StageSequence (order), StageName and StageType (e.g. Work).'],
   scRes:['这个工站的结果；官方文字写的是整笔 Work 交易。','Result for this stage; the official text says “Work transaction”.'],
   perf:['CFX 1.6 新增：影响产能的原因，JSON 范例为 Cause 清单（例如 LowFeederSpeed）。','Added in CFX 1.6: causes that affected performance; the JSON example lists Cause values (e.g. LowFeederSpeed).'],
+  hStage:['Stage 结构定义（CFX.Structures.Stage）','Stage structure (CFX.Structures.Stage)'], sdOff:['官方原文','Official text'], sdMean:['说明','Meaning'], sdEx:['本页 Machine - 1 的报法','How Machine - 1 reports it here'],
+  sdCls:['设备里的一个工作区或步骤；每个工站都是一个 Stage。','A work area or step in the machine; each station is one Stage.'],
+  sdSeq:['在设备里的顺序（第几道），不是编号；并行、制程相同的工站共用同一个值。','Its order in the machine, not an ID; parallel stations doing the same process share one value.'],
+  sdName:['友善名称；官方未规定唯一，设备端应固定且不重复。','A friendly name; not defined as unique, so the machine should keep it fixed and distinct.'],
+  sdType:['这个 Stage 的用途，例如 Work。','The purpose of the stage, e.g. Work.'],
+  sdNote:['结论：S1、S2 只是为了增加产量的并行工站，StageSequence 都报 1，用 StageName 区分；接收端（MES、看板）要用 StageSequence + StageName 一起辨识工站。官方 Stage 定义见 CFX 2.0 文件。','In short: S1 and S2 are parallel stations added for capacity, so both report StageSequence 1 and differ by StageName; receivers (MES, dashboards) should identify a station by StageSequence + StageName. Stage definition from the CFX 2.0 documentation.'],
   step:['下一步','Step'], back:['上一步','Back'], stepMore:['（同一时刻共 {n} 则，完整内容见讯息纪录）','({n} messages at the same moment; see the message log)'], stepInfo:['第 {n} 步 · {t}s · {eq} · {m} {tx}','Step {n} · {t}s · {eq} · {m} {tx}'], stepHint:['按「下一步」会播放到下一个 CFX 讯息发出后暂停。','Step plays until the next CFX message is sent, then pauses.'],
   hCap:['产能与产出','Capacity & output'], thEq:['设备 / 工序','Equipment / Seq'], thEff:['等效CT','Eff. CT'], thBal:['内部平衡','Internal balance'],
   thTx:['TX 笔数','TX count'], thOut:['产出 pcs','Output pcs'], ftLine:['线体完成','Line output'],
@@ -460,6 +482,7 @@ zh:{
     '**UnitsArrived / UnitsDeparted 没有 TransactionID。**它们只记录实体进出设备，要靠 PrimaryIdentifier / HermesIdentifier 和 WorkStarted / WorkCompleted 对上。',
     '**只有 WorkStarted / WorkCompleted 的 UnitCount 绑定交易。**Arrived / Departed 的 UnitCount 只是实体颗数；同一托盘进出同一台设备时，四个讯息的数值应该一致。',
     '**UnitsDeparted 不代表加工完成或良品。**官方注明不隐含任何加工资讯，结果要看 WorkCompleted 的 Result。',
+    '**并行工站共用 StageSequence。**官方定义 StageSequence 是「在设备里的顺序」，制程相同的并行工站报同一个值，用 StageName 区分。',
     '**WorkStageStarted / WorkStageCompleted 只带 TransactionID 和 Stage。**同一托盘换下一道工序只报 WSS / WSC，不会再报 WS；并行工站放的是不同托盘，各自一笔 TransactionID。'
   ]},
 en:{
@@ -478,6 +501,7 @@ en:{
     '**UnitsArrived / UnitsDeparted have no TransactionID.** They only record units physically entering and leaving; match them to WorkStarted / WorkCompleted by PrimaryIdentifier / HermesIdentifier.',
     '**Only the UnitCount in WorkStarted / WorkCompleted is tied to a transaction.** In Arrived / Departed it is a physical count; for one tray through one equipment, all four values should match.',
     '**UnitsDeparted does not mean the work finished or passed.** The official text says it implies nothing about activity; check Result in WorkCompleted.',
+    '**Parallel stations share StageSequence.** The official definition is the stage\'s order in the machine, so identical parallel stations report the same value and differ by StageName.',
     '**WorkStageStarted / WorkStageCompleted carry only TransactionID and Stage.** A tray moving to the next stage reports only WSS / WSC, never a new WS; parallel stages hold different trays, each with its own TransactionID.'
   ]}
 };
