@@ -68,7 +68,8 @@ canvas{display:block;width:100%}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
 .legend i.o{background:transparent;border:2px solid}
 .legend i.st{width:12px;height:12px;box-sizing:border-box;border:2px solid var(--c);padding:2px;background:var(--c);background-clip:content-box;border-radius:3px}
-.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}
+.grid{display:grid;grid-template-columns:1.1fr 1.1fr .9fr;gap:16px}
+@media (max-width:1200px){.grid{grid-template-columns:1fr 1fr}.grid>.panel:last-child{grid-column:1/-1}}
 @media (max-width:760px){.grid{grid-template-columns:1fr}.btns{margin-left:0}}
 .panel{min-width:0}
 .panel h2{font-size:13px;font-weight:600;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
@@ -90,7 +91,7 @@ tfoot td{font-weight:600}
 .cfx summary{cursor:pointer;font-size:14px;font-weight:600;padding:12px 16px;background:var(--panel);border-radius:4px;list-style-position:inside}
 .cfx[open] summary{border-bottom:1px solid var(--line);border-radius:4px 4px 0 0}
 .cfx summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.cfx-body{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;padding:16px}
+.cfx-body{display:block;padding:16px}
 @media (max-width:760px){.cfx-body{grid-template-columns:1fr}}
 .cfx-body>div{min-width:0;font-size:13px;line-height:1.75}
 .cfx-body h3{font-size:13px;margin:0 0 6px;font-weight:600}
@@ -125,6 +126,8 @@ pre.json{margin:0;padding:12px;border:1px solid var(--line);border-radius:4px;ba
 .dg-red{stroke:var(--bad)}
 .dg-redf,.dg-redt{fill:var(--bad)}
 .dgsrc{padding:0 16px 12px;margin:0}
+.grid>.panel{display:flex;flex-direction:column}
+.pjson{border:0;border-radius:0 0 4px 4px;margin:0;flex:1 1 0;height:0;min-height:220px;overflow:auto}
 
 .cfx-wrap{padding:16px;display:flex;flex-direction:column;gap:12px}
 .cfx-wrap>.flow{margin:0}
@@ -277,6 +280,10 @@ tr.eqrow td{background:var(--panel)}
       <div class="evfilter" id="evFilter"></div>
       <ul class="log" id="log"></ul>
     </section>
+    <section class="box panel">
+      <h2 data-i18n="hJson">讯息内容（示意）</h2>
+      <pre class="json pjson" id="json"></pre>
+    </section>
   </div>
 
   <details class="box cfx" open>
@@ -302,10 +309,6 @@ tr.eqrow td{background:var(--panel)}
         <div>
           <h3 id="cfgNotesTitle"></h3>
           <ol id="cfgNotes"></ol>
-        </div>
-        <div>
-          <h3 data-i18n="hJson">对照本页最新一笔交易的 WorkStarted 讯息</h3>
-          <pre class="json" id="json"></pre>
           <p class="src"><span data-i18n="src">来源：</span><a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_UnitsArrived.htm" target="_blank" rel="noopener">UnitsArrived</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkStarted.htm" target="_blank" rel="noopener">WorkStarted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkStageStarted.htm" target="_blank" rel="noopener">WorkStageStarted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkStageCompleted.htm" target="_blank" rel="noopener">WorkStageCompleted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_WorkCompleted.htm" target="_blank" rel="noopener">WorkCompleted</a> · <a href="https://www.connectedfactoryexchange.com/CFXDemo/sdk/html/T_CFX_Production_UnitsDeparted.htm" target="_blank" rel="noopener">UnitsDeparted</a></p>
         </div>
       </div>
@@ -380,7 +383,7 @@ const D={
   step:['下一步','Step'], back:['上一步','Back'], stepMore:['（同一时刻共 {n} 则，完整内容见讯息纪录）','({n} messages at the same moment; see the message log)'], stepInfo:['第 {n} 步 · {t}s · {eq} · {m} {tx}','Step {n} · {t}s · {eq} · {m} {tx}'], stepHint:['按「下一步」会播放到下一个 CFX 讯息发出后暂停。','Step plays until the next CFX message is sent, then pauses.'],
   hCap:['产能与产出','Capacity & output'], thEq:['设备 / 工序','Equipment / Seq'], thEff:['等效CT','Eff. CT'], thBal:['内部平衡','Internal balance'],
   thTx:['TX 笔数','TX count'], thOut:['产出 pcs','Output pcs'], ftLine:['线体完成','Line output'],
-  hLog:['CFX 讯息纪录（点选一笔可在下方查看讯息内容）','CFX message log (click a row to view the message below)'],
+  hLog:['CFX 讯息纪录（点选一笔可在右侧查看讯息内容）','CFX message log (click a row to view it on the right)'],
   logEmpty:['产品进入第一台设备后，这里会依时间列出 CFX 讯息。','CFX messages appear here once units enter the first equipment.'], tlTitle:['CFX 讯息时间轴（最近 30 秒）','CFX message timeline (last 30 s)'], tlNow:['现在','now'],
   hCmp:['官方定义对照（CFX.Production）','Official definitions (CFX.Production)'], rWhen:['发送时机','When sent'],
   aWhen:['产品实体到达设备，尚未开始加工。','Units physically arrive, before processing starts.'],
