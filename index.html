@@ -226,7 +226,7 @@ tr.eqrow td{background:var(--panel)}
   <header class="hdr">
     <div class="hdr-txt">
     <h1 id="cfgTitle">设备 · 工序 · 工站 投料动画</h1>
-    <p class="sub" id="cfgIntro">一台<b>设备</b>内有多道 <b>Sequence（工序）</b>前后串联，每道工序可有多个 <b>Stage（工站）</b>并行，用来平衡产能。<br>设备每处理一次产生 1 笔 <b>TransactionID</b>，包含 <b>UnitCount</b> 颗产品；各设备的 UnitCount 可以不同：下一台的第一道工序收满自己的 UnitCount 才开始加工，收不下的产品留在上一台，形成堵塞。</p>
+    <p class="sub" id="cfgIntro">一台<b>设备</b>内有多道 <b>Sequence（工序）</b>前后串联，<br>每道工序可有多个 <b>Stage（工站）</b>并行，用来平衡产能。<br>设备每处理一次产生 1 笔 <b>TransactionID</b>，包含 <b>UnitCount</b> 颗产品。</p>
     </div>
     <div class="hdr-act">
       <div class="seg langseg" role="group" aria-label="Language"><button type="button" data-lang="zh" aria-pressed="true">中文</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
@@ -468,7 +468,7 @@ const T=I18N.t;
 const DEFS={
 zh:{
   title:'设备 · 工序 · 工站 投料动画',
-  intro:'一台**设备**内有多道 **Sequence（工序）**前后串联，每道工序可有多个 **Stage（工站）**并行，用来平衡产能。\n设备每处理一次产生 1 笔 **TransactionID**，包含 **UnitCount** 颗产品；各设备的 UnitCount 可以不同：下一台的第一道工序收满自己的 UnitCount 才开始加工，收不下的产品留在上一台，形成堵塞。',
+  intro:'一台**设备**内有多道 **Sequence（工序）**前后串联，\n每道工序可有多个 **Stage（工站）**并行，用来平衡产能。\n设备每处理一次产生 1 笔 **TransactionID**，包含 **UnitCount** 颗产品。',
   cfxTitle:'CFX 定义说明：UnitsArrived · WorkStarted · WorkStageStarted · WorkStageCompleted · WorkCompleted · UnitsDeparted',
   cfxFlow:'UnitsArrived（到达）→ WorkStarted（TransactionID 开始）→ WorkStageStarted（工站开始）→ WorkStageCompleted（工站完成）→ WorkCompleted（TransactionID 结束）→ UnitsDeparted（离开）',
   def1:'从 WorkStarted 到 WorkCompleted 这段加工使用同一个 TransactionID。',
@@ -487,7 +487,7 @@ zh:{
   ]},
 en:{
   title:'Equipment · Sequence · Stage Loading Animation',
-  intro:'Each **equipment** runs several **Sequences** in series, and each sequence can have several parallel **Stages** to balance capacity.\nEach equipment cycle creates 1 **TransactionID** covering **UnitCount** units. UnitCount can differ per equipment: the next equipment\'s first sequence starts only when it has its own UnitCount; units it cannot take stay on the previous equipment and block it.',
+  intro:'Each **equipment** runs several **Sequences** in series, and each sequence can have several parallel **Stages** to balance capacity.\nEach equipment cycle creates 1 **TransactionID** covering **UnitCount** units.',
   cfxTitle:'CFX definitions: UnitsArrived · WorkStarted · WorkStageStarted · WorkStageCompleted · WorkCompleted · UnitsDeparted',
   cfxFlow:'UnitsArrived (arrive) → WorkStarted (TransactionID begins) → WorkStageStarted (stage/station starts) → WorkStageCompleted (stage/station done) → WorkCompleted (TransactionID ends) → UnitsDeparted (depart)',
   def1:'One TransactionID covers the processing from WorkStarted to WorkCompleted.',
