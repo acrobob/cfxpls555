@@ -229,7 +229,7 @@ tr.eqrow td{background:var(--panel)}
     <p class="sub" id="cfgIntro">一台<b>设备</b>内有多道 <b>Sequence（工序）</b>前后串联，<br>每道工序可有多个 <b>Stage（工站）</b>并行，用来平衡产能。<br>设备每处理一次产生 1 笔 <b>TransactionID</b>，包含 <b>UnitCount</b> 颗产品。</p>
     </div>
     <div class="hdr-act">
-      <div class="seg langseg" role="group" aria-label="Language"><button type="button" data-lang="zh" aria-pressed="true">中文</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
+      <div class="seg langseg" role="group" aria-label="Language"><button type="button" data-lang="tw" aria-pressed="false">繁中</button><button type="button" data-lang="zh" aria-pressed="true">简中</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
       <button class="btn cfgbtn" id="cfgOpen" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span data-i18n="cfgBtn">配置</span></button>
     </div>
   </header>
@@ -387,73 +387,74 @@ tr.eqrow td{background:var(--panel)}
 <script>
 window.I18N=(function(){
 const D={
-  cfgBtn:['配置','Settings'], ucLbl:['UnitCount（每次投入颗数）','UnitCount (units per load)'], speedLbl:['动画速度','Speed'],
-  play:['播放','Play'], pause:['暂停','Pause'], reset:['重置','Reset'], eqCfg:['设备配置','Equipment setup'], eqNum:['设备数','Equipment'],
-  lgTray:['托盘 = 1 次投入','Tray = 1 load'], lgUnit:['产品','Unit'], lgDone:['已完成','Done'], lgProc:['加工中','Processing'], lgBlock:['等下一站','Waiting for next'], lgBuf:['投入区：发生器送来的产品','Input area: units from the source'], lgEmpty:['空格 = 还没收满 UnitCount','Empty pocket = UnitCount not yet filled'],
-  dgTitle:['CFX 讯息流程图：常规设备 vs. 多 Stage 设备','CFX message flow: standard vs. multi-stage machine'], dgSrc:['draw.io 原始档：','draw.io source file: '],
-  lkTitle:['输入密码以修改设定','Enter password to change settings'],
-  ssWhen:['某道工序（Sequence）里的工站（Stage）开始加工。','A stage (station) within a sequence starts work.'], scWhen:['该工序里的工站（Stage）完成加工。','That stage (station) within the sequence finishes.'],
-  stInfo:['结构含 StageSequence（顺序）、StageName（名称）、StageType（如 Work）。','Holds StageSequence (order), StageName and StageType (e.g. Work).'],
-  scRes:['这个工站的结果；官方文字写的是整笔 Work 交易。','Result for this stage; the official text says “Work transaction”.'],
-  perf:['CFX 1.6 新增：影响产能的原因，JSON 范例为 Cause 清单（例如 LowFeederSpeed）。','Added in CFX 1.6: causes that affected performance; the JSON example lists Cause values (e.g. LowFeederSpeed).'],
-  hStage:['Stage 结构定义（CFX.Structures.Stage）','Stage structure (CFX.Structures.Stage)'], sdOff:['官方原文','Official text'], sdMean:['说明','Meaning'], sdEx:['本页 Machine - 1 的报法','How Machine - 1 reports it here'],
-  sdCls:['设备里的一个工作区或步骤；每个工站都是一个 Stage。','A work area or step in the machine; each station is one Stage.'],
-  sdSeq:['在设备里的顺序（第几道），不是编号；并行、制程相同的工站共用同一个值。','Its order in the machine, not an ID; parallel stations doing the same process share one value.'],
-  sdName:['友善名称；官方未规定唯一，设备端应固定且不重复。','A friendly name; not defined as unique, so the machine should keep it fixed and distinct.'],
-  sdType:['这个 Stage 的用途，例如 Work。','The purpose of the stage, e.g. Work.'],
-  sdNote:['结论：S1、S2 只是为了增加产量的并行工站，StageSequence 都报 1，用 StageName 区分；接收端（MES、看板）要用 StageSequence + StageName 一起辨识工站。官方 Stage 定义见 CFX 2.0 文件。','In short: S1 and S2 are parallel stations added for capacity, so both report StageSequence 1 and differ by StageName; receivers (MES, dashboards) should identify a station by StageSequence + StageName. Stage definition from the CFX 2.0 documentation.'],
-  step:['下一步','Step'], back:['上一步','Back'], stepMore:['（同一时刻共 {n} 则，完整内容见讯息纪录）','({n} messages at the same moment; see the message log)'], stepInfo:['第 {n} 步 · {t}s · {eq} · {m} {tx}','Step {n} · {t}s · {eq} · {m} {tx}'], stepHint:['按「下一步」会播放到下一个 CFX 讯息发出后暂停。','Step plays until the next CFX message is sent, then pauses.'],
-  hCap:['产能与产出','Capacity & output'], thEq:['设备 / 工序','Equipment / Seq'], thEff:['等效CT','Eff. CT'], thBal:['内部平衡','Internal balance'],
-  thTx:['TX 笔数','TX count'], thOut:['产出 pcs','Output pcs'], ftLine:['线体完成','Line output'],
-  hLog:['CFX 讯息纪录（点选一笔可在右侧查看讯息内容）','CFX message log (click a row to view it on the right)'],
-  logEmpty:['产品进入第一台设备后，这里会依时间列出 CFX 讯息。','CFX messages appear here once units enter the first equipment.'], tlTitle:['CFX 讯息时间轴（最近 30 秒）','CFX message timeline (last 30 s)'], tlNow:['现在','now'],
-  hCmp:['官方定义对照（CFX.Production）','Official definitions (CFX.Production)'], rWhen:['发送时机','When sent'],
-  aWhen:['产品实体到达设备，尚未开始加工。','Units physically arrive, before processing starts.'],
-  wsNoDesc:['官方页面无类别说明','No class description on the official page'], wsWhen:['开始加工，产生 TransactionID。','Processing starts and a TransactionID is created.'],
-  cWhen:['设备上所有加工完成。','All work on the equipment is finished.'], dWhen:['产品实体离开设备，不代表加工结果。','Units physically leave; says nothing about the result.'],
-  na:['无此栏位','Not a field'], cTx:['沿用 WorkStarted 的 TransactionID。','Same TransactionID as WorkStarted.'],
-  aUc:['实体到达的产品颗数。','Physical count of units that arrived.'], dUc:['实体离开的产品颗数。','Physical count of units that departed.'],
-  cUc:['文字同 WorkStarted；只有开始时拿不到识别资讯才需要补。','Same text as WorkStarted; only needed if identifiers were unknown at start.'],
-  opt:['选填','Optional'], aUnits:['到达的每颗产品（已知时）。','Each unit that arrived (if known).'], cUnits:['文字同 WorkStarted。','Same text as WorkStarted.'],
-  dUnits:['官方文字沿用 arrived，应理解为离开的产品。','The official text reuses "arrived"; read it as the units that departed.'], yes:['有','Yes'],
-  hJson:['讯息内容（示意）','Message body (example)'], src:['来源：','Sources: '],
-  pwTitle:['输入配置密码','Enter settings password'], pwLbl:['密码','Password'], cancel:['取消','Cancel'], unlock:['解锁','Unlock'],
-  pwWrong:['密码不正确，请重新输入。','Wrong password. Try again.'],
-  cfgHead:['文字配置（中文）','Text settings (English)'],
-  cfgHint:['支持 <code>**粗体**</code> 和 <code>`代码`</code>，说明栏位内的换行会照样显示。这里只修改中文版文字。','Supports <code>**bold**</code> and <code>`code`</code>; line breaks are kept. This edits the English text only.'],
-  whereDb:[' 保存后所有打开本页的人都会看到更新。',' Saved changes appear for everyone who opens this page.'],
-  whereLocal:[' 当前无法连接共享存储，保存只在本浏览器生效。',' Shared storage is unavailable; changes are saved in this browser only.'],
-  fTitle:['主标题','Title'], fIntro:['标题下方说明','Intro text'], fCfx:['CFX 说明区块','CFX section'], fCfxTitle:['区块标题','Section title'],
-  fFlow:['流程总结','Flow summary'], fDef1:['TransactionID 说明','TransactionID note'], fDef2:['UnitCount 说明','UnitCount note'], fDef3:['Units 说明','Units note'],
-  fNotesTitle:['注意事项标题','Notes title'], fNotes:['注意事项（每行一条；同一条内要换行请写 <code>\\n</code>）','Notes (one per line; write <code>\\n</code> for a line break inside a note)'],
-  fPw:['修改密码（不改请留空）','Change password (leave blank to keep)'], fPw1:['新密码','New password'], fPw2:['再输入一次','Confirm password'],
-  cfgDefault:['恢复默认文字','Restore default text'], save:['保存','Save'],
-  pwMismatch:['两次输入的新密码不一致。','The two passwords do not match.'], pwShort:['新密码至少 4 个字符。','Use at least 4 characters.'],
-  noPerm:['你没有修改本页的权限，请联系页面所有者。','You do not have permission to edit this page. Ask the page owner.'], saveFail:['保存失败，请稍后再试。','Could not save. Try again later.'],
-  uEq:[' 台',''], uSeq:[' 道',''], uSt:[' 个',''], eq:['Machine - ','Machine - '], eqShort:['Machine - ','Machine - '],
-  tabSub:['UnitCount {u} · {n} 工序 · {s} 工站','UnitCount {u} · {n} seq · {s} stages'], seqN:['Machine - {e} 的工序数 Sequence','Sequences in Machine - {e}'], stLbl:['Stage 工站','Stages'],
-  eqSum:['{e} 台设备 · {s} 个工站','{e} equipment · {s} stages'], cIn:['投入','In'], cOut:['产出','Out'], perLoad:['{n} pcs/次','{n} pcs/load'],
-  txRule:['设备处理一次 = 1 笔 TransactionID，包含该设备的 <b>UnitCount</b> 颗','1 equipment cycle = 1 TransactionID with that equipment\'s <b>UnitCount</b> units'], latest:['最新：','Latest: '],
-  jsonCmt:['// Machine - {e} · CFX.Production.{m}（示意）· {t}s','// Machine - {e} · CFX.Production.{m} (example) · {t}s'], stageNote:['// WorkStageStarted / WorkStageCompleted 栏位为示意，未逐一核对官方页面','// WorkStageStarted / WorkStageCompleted fields are illustrative, not checked against the official page'],
-  bottleneck:['瓶颈','Bottleneck'],
-  genCfg:['投入发生器','Source (generator)'], gMode:['投入模式','Arrival mode'], mFill:['不缺料','Always full'], mFixed:['固定间隔','Fixed interval'], mExp:['随机间隔（指数）','Random (exponential)'],
-  gIat:['到达间隔','Inter-arrival time'], gBatch:['每次到达颗数','Units per arrival'], gCap:['投入区容量','Input buffer size'],
-  genSumFill:['不缺料 · 投入区容量 {c}','Always full · buffer {c}'], genSum:['{m} · 每 {i}s 到 {b} 颗 · {r} pcs/h','{m} · {b} pcs every {i}s · {r} pcs/h'],
-  gStatHi:['投入速率 {r} pcs/h 高于线体产能 {u} pcs/h：投入区会堆满，发生器被阻塞。','Arrival rate {r} pcs/h is above line capacity {u} pcs/h: the input buffer fills and the source is blocked.'],
-  gStatLo:['投入速率 {r} pcs/h 低于线体产能 {u} pcs/h：产线会缺料，实际产出约等于投入速率。','Arrival rate {r} pcs/h is below line capacity {u} pcs/h: the line starves and output ≈ arrival rate.'],
-  gStatEq:['投入速率 {r} pcs/h 与线体产能 {u} pcs/h 相当。','Arrival rate {r} pcs/h matches line capacity {u} pcs/h.'],
-  gStatFill:['不缺料模式：投入区随时补满，测的是线体最大产能。','Always-full mode: the input buffer is kept full, so this shows maximum line capacity.'],
-  gSrcStat:['已投入 {a} pcs · 发生器阻塞 {b}% 时间','Arrived {a} pcs · source blocked {b}% of the time'],
-  kTheo:['理论 UPH','Theoretical UPH'], kAct:['实际 UPH（近 60s）','Actual UPH (last 60s)'], kArr:['投入速率 pcs/h','Arrival rate pcs/h'], kWip:['在制品 WIP','WIP'],
-  thUtil:['忙碌 / 阻塞 / 缺料 %','Busy / blocked / starved %'], uBusy:['加工中','Processing'], uBlk:['下站堵塞','Blocked by next'], uIdle:['当站缺料','Starved'], utilLbl:['状态 %','State %'], kLine:['线体 UPH','Line UPH'], kBal:['设备间平衡率','Line balance'], kEq:['设备 / 工站','Equipment / stages'],
+  cfgBtn:['配置','Settings','配置'], ucLbl:['UnitCount（每次投入颗数）','UnitCount (units per load)','UnitCount（每次投入顆數）'], speedLbl:['动画速度','Speed','動畫速度'],
+  play:['播放','Play','播放'], pause:['暂停','Pause','暫停'], reset:['重置','Reset','重置'], eqCfg:['设备配置','Equipment setup','設備配置'], eqNum:['设备数','Equipment','設備數'],
+  lgTray:['托盘 = 1 次投入','Tray = 1 load','托盤 = 1 次投入'], lgUnit:['产品','Unit','產品'], lgDone:['已完成','Done','已完成'], lgProc:['加工中','Processing','加工中'], lgBlock:['等下一站','Waiting for next','等下一站'], lgBuf:['投入区：发生器送来的产品','Input area: units from the source','投入區：發生器送來的產品'], lgEmpty:['空格 = 还没收满 UnitCount','Empty pocket = UnitCount not yet filled','空格 = 還沒收滿 UnitCount'],
+  dgTitle:['CFX 讯息流程图：常规设备 vs. 多 Stage 设备','CFX message flow: standard vs. multi-stage machine','CFX 訊息流程圖：常規設備 vs. 多 Stage 設備'], dgSrc:['draw.io 原始档：','draw.io source file: ','draw.io 原始檔：'],
+  lkTitle:['输入密码以修改设定','Enter password to change settings','輸入密碼以修改設定'],
+  ssWhen:['某道工序（Sequence）里的工站（Stage）开始加工。','A stage (station) within a sequence starts work.','某道工序（Sequence）裡的工站（Stage）開始加工。'], scWhen:['该工序里的工站（Stage）完成加工。','That stage (station) within the sequence finishes.','該工序裡的工站（Stage）完成加工。'],
+  stInfo:['结构含 StageSequence（顺序）、StageName（名称）、StageType（如 Work）。','Holds StageSequence (order), StageName and StageType (e.g. Work).','結構含 StageSequence（順序）、StageName（名稱）、StageType（如 Work）。'],
+  scRes:['这个工站的结果；官方文字写的是整笔 Work 交易。','Result for this stage; the official text says “Work transaction”.','這個工站的結果；官方文字寫的是整筆 Work 交易。'],
+  perf:['CFX 1.6 新增：影响产能的原因，JSON 范例为 Cause 清单（例如 LowFeederSpeed）。','Added in CFX 1.6: causes that affected performance; the JSON example lists Cause values (e.g. LowFeederSpeed).','CFX 1.6 新增：影響產能的原因，JSON 範例為 Cause 清單（例如 LowFeederSpeed）。'],
+  hStage:['Stage 结构定义（CFX.Structures.Stage）','Stage structure (CFX.Structures.Stage)','Stage 結構定義（CFX.Structures.Stage）'], sdOff:['官方原文','Official text','官方原文'], sdMean:['说明','Meaning','說明'], sdEx:['本页 Machine - 1 的报法','How Machine - 1 reports it here','本頁 Machine - 1 的報法'],
+  sdCls:['设备里的一个工作区或步骤；每个工站都是一个 Stage。','A work area or step in the machine; each station is one Stage.','設備裡的一個工作區或步驟；每個工站都是一個 Stage。'],
+  sdSeq:['在设备里的顺序（第几道），不是编号；并行、制程相同的工站共用同一个值。','Its order in the machine, not an ID; parallel stations doing the same process share one value.','在設備裡的順序（第幾道），不是編號；並行、製程相同的工站共用同一個值。'],
+  sdName:['友善名称；官方未规定唯一，设备端应固定且不重复。','A friendly name; not defined as unique, so the machine should keep it fixed and distinct.','友善名稱；官方未規定唯一，設備端應固定且不重複。'],
+  sdType:['这个 Stage 的用途，例如 Work。','The purpose of the stage, e.g. Work.','這個 Stage 的用途，例如 Work。'],
+  sdNote:['结论：S1、S2 只是为了增加产量的并行工站，StageSequence 都报 1，用 StageName 区分；接收端（MES、看板）要用 StageSequence + StageName 一起辨识工站。官方 Stage 定义见 CFX 2.0 文件。','In short: S1 and S2 are parallel stations added for capacity, so both report StageSequence 1 and differ by StageName; receivers (MES, dashboards) should identify a station by StageSequence + StageName. Stage definition from the CFX 2.0 documentation.','結論：S1、S2 只是為了增加產量的並行工站，StageSequence 都報 1，用 StageName 區分；接收端（MES、看板）要用 StageSequence + StageName 一起辨識工站。官方 Stage 定義見 CFX 2.0 文件。'],
+  step:['下一步','Step','下一步'], back:['上一步','Back','上一步'], stepMore:['（同一时刻共 {n} 则，完整内容见讯息纪录）','({n} messages at the same moment; see the message log)','（同一時刻共 {n} 則，完整內容見訊息紀錄）'], stepInfo:['第 {n} 步 · {t}s · {eq} · {m} {tx}','Step {n} · {t}s · {eq} · {m} {tx}','第 {n} 步 · {t}s · {eq} · {m} {tx}'], stepHint:['按「下一步」会播放到下一个 CFX 讯息发出后暂停。','Step plays until the next CFX message is sent, then pauses.','按「下一步」會播放到下一個 CFX 訊息發出後暫停。'],
+  hCap:['产能与产出','Capacity & output','產能與產出'], thEq:['设备 / 工序','Equipment / Seq','設備 / 工序'], thEff:['等效CT','Eff. CT','等效CT'], thBal:['内部平衡','Internal balance','內部平衡'],
+  thTx:['TX 笔数','TX count','TX 筆數'], thOut:['产出 pcs','Output pcs','產出 pcs'], ftLine:['线体完成','Line output','線體完成'],
+  hLog:['CFX 讯息纪录（点选一笔可在右侧查看讯息内容）','CFX message log (click a row to view it on the right)','CFX 訊息紀錄（點選一筆可在右側查看訊息內容）'],
+  logEmpty:['产品进入第一台设备后，这里会依时间列出 CFX 讯息。','CFX messages appear here once units enter the first equipment.','產品進入第一台設備後，這裡會依時間列出 CFX 訊息。'], tlTitle:['CFX 讯息时间轴（最近 30 秒）','CFX message timeline (last 30 s)','CFX 訊息時間軸（最近 30 秒）'], tlNow:['现在','now','現在'],
+  hCmp:['官方定义对照（CFX.Production）','Official definitions (CFX.Production)','官方定義對照（CFX.Production）'], rWhen:['发送时机','When sent','發送時機'],
+  aWhen:['产品实体到达设备，尚未开始加工。','Units physically arrive, before processing starts.','產品實體到達設備，尚未開始加工。'],
+  wsNoDesc:['官方页面无类别说明','No class description on the official page','官方頁面無類別說明'], wsWhen:['开始加工，产生 TransactionID。','Processing starts and a TransactionID is created.','開始加工，產生 TransactionID。'],
+  cWhen:['设备上所有加工完成。','All work on the equipment is finished.','設備上所有加工完成。'], dWhen:['产品实体离开设备，不代表加工结果。','Units physically leave; says nothing about the result.','產品實體離開設備，不代表加工結果。'],
+  na:['无此栏位','Not a field','無此欄位'], cTx:['沿用 WorkStarted 的 TransactionID。','Same TransactionID as WorkStarted.','沿用 WorkStarted 的 TransactionID。'],
+  aUc:['实体到达的产品颗数。','Physical count of units that arrived.','實體到達的產品顆數。'], dUc:['实体离开的产品颗数。','Physical count of units that departed.','實體離開的產品顆數。'],
+  cUc:['文字同 WorkStarted；只有开始时拿不到识别资讯才需要补。','Same text as WorkStarted; only needed if identifiers were unknown at start.','文字同 WorkStarted；只有開始時拿不到識別資訊才需要補。'],
+  opt:['选填','Optional','選填'], aUnits:['到达的每颗产品（已知时）。','Each unit that arrived (if known).','到達的每顆產品（已知時）。'], cUnits:['文字同 WorkStarted。','Same text as WorkStarted.','文字同 WorkStarted。'],
+  dUnits:['官方文字沿用 arrived，应理解为离开的产品。','The official text reuses "arrived"; read it as the units that departed.','官方文字沿用 arrived，應理解為離開的產品。'], yes:['有','Yes','有'],
+  hJson:['讯息内容（示意）','Message body (example)','訊息內容（示意）'], src:['来源：','Sources: ','來源：'],
+  pwTitle:['输入配置密码','Enter settings password','輸入配置密碼'], pwLbl:['密码','Password','密碼'], cancel:['取消','Cancel','取消'], unlock:['解锁','Unlock','解鎖'],
+  pwWrong:['密码不正确，请重新输入。','Wrong password. Try again.','密碼不正確，請重新輸入。'],
+  cfgHead:['文字配置（简体中文）','Text settings (English)','文字配置（繁體中文）'],
+  cfgHint:['支持 <code>**粗体**</code> 和 <code>`代码`</code>，说明栏位内的换行会照样显示。这里只修改简体中文版文字。','Supports <code>**bold**</code> and <code>`code`</code>; line breaks are kept. This edits the English text only.','支持 <code>**粗體**</code> 和 <code>`代碼`</code>，說明欄位內的換行會照樣顯示。這裡只修改繁體中文版文字。'],
+  whereDb:[' 保存后所有打开本页的人都会看到更新。',' Saved changes appear for everyone who opens this page.',' 保存後所有打開本頁的人都會看到更新。'],
+  whereLocal:[' 当前无法连接共享存储，保存只在本浏览器生效。',' Shared storage is unavailable; changes are saved in this browser only.',' 當前無法連接共享存儲，保存只在本瀏覽器生效。'],
+  fTitle:['主标题','Title','主標題'], fIntro:['标题下方说明','Intro text','標題下方說明'], fCfx:['CFX 说明区块','CFX section','CFX 說明區塊'], fCfxTitle:['区块标题','Section title','區塊標題'],
+  fFlow:['流程总结','Flow summary','流程總結'], fDef1:['TransactionID 说明','TransactionID note','TransactionID 說明'], fDef2:['UnitCount 说明','UnitCount note','UnitCount 說明'], fDef3:['Units 说明','Units note','Units 說明'],
+  fNotesTitle:['注意事项标题','Notes title','注意事項標題'], fNotes:['注意事项（每行一条；同一条内要换行请写 <code>\\n</code>）','Notes (one per line; write <code>\\n</code> for a line break inside a note)','注意事項（每行一條；同一條內要換行請寫 <code>\\n</code>）'],
+  fPw:['修改密码（不改请留空）','Change password (leave blank to keep)','修改密碼（不改請留空）'], fPw1:['新密码','New password','新密碼'], fPw2:['再输入一次','Confirm password','再輸入一次'],
+  cfgDefault:['恢复默认文字','Restore default text','恢復默認文字'], save:['保存','Save','保存'],
+  pwMismatch:['两次输入的新密码不一致。','The two passwords do not match.','兩次輸入的新密碼不一致。'], pwShort:['新密码至少 4 个字符。','Use at least 4 characters.','新密碼至少 4 個字符。'],
+  noPerm:['你没有修改本页的权限，请联系页面所有者。','You do not have permission to edit this page. Ask the page owner.','你沒有修改本頁的權限，請聯繫頁面所有者。'], saveFail:['保存失败，请稍后再试。','Could not save. Try again later.','保存失敗，請稍後再試。'],
+  uEq:[' 台','',' 台'], uSeq:[' 道','',' 道'], uSt:[' 个','',' 個'], eq:['Machine - ','Machine - ','Machine - '], eqShort:['Machine - ','Machine - ','Machine - '],
+  tabSub:['UnitCount {u} · {n} 工序 · {s} 工站','UnitCount {u} · {n} seq · {s} stages','UnitCount {u} · {n} 工序 · {s} 工站'], seqN:['Machine - {e} 的工序数 Sequence','Sequences in Machine - {e}','Machine - {e} 的工序數 Sequence'], stLbl:['Stage 工站','Stages','Stage 工站'],
+  eqSum:['{e} 台设备 · {s} 个工站','{e} equipment · {s} stages','{e} 台設備 · {s} 個工站'], cIn:['投入','In','投入'], cOut:['产出','Out','產出'], perLoad:['{n} pcs/次','{n} pcs/load','{n} pcs/次'],
+  txRule:['设备处理一次 = 1 笔 TransactionID，包含该设备的 <b>UnitCount</b> 颗','1 equipment cycle = 1 TransactionID with that equipment\'s <b>UnitCount</b> units','設備處理一次 = 1 筆 TransactionID，包含該設備的 <b>UnitCount</b> 顆'], latest:['最新：','Latest: ','最新：'],
+  jsonCmt:['// Machine - {e} · CFX.Production.{m}（示意）· {t}s','// Machine - {e} · CFX.Production.{m} (example) · {t}s','// Machine - {e} · CFX.Production.{m}（示意）· {t}s'], stageNote:['// WorkStageStarted / WorkStageCompleted 栏位为示意，未逐一核对官方页面','// WorkStageStarted / WorkStageCompleted fields are illustrative, not checked against the official page','// WorkStageStarted / WorkStageCompleted 欄位為示意，未逐一核對官方頁面'],
+  bottleneck:['瓶颈','Bottleneck','瓶頸'],
+  genCfg:['投入发生器','Source (generator)','投入發生器'], gMode:['投入模式','Arrival mode','投入模式'], mFill:['不缺料','Always full','不缺料'], mFixed:['固定间隔','Fixed interval','固定間隔'], mExp:['随机间隔（指数）','Random (exponential)','隨機間隔（指數）'],
+  gIat:['到达间隔','Inter-arrival time','到達間隔'], gBatch:['每次到达颗数','Units per arrival','每次到達顆數'], gCap:['投入区容量','Input buffer size','投入區容量'],
+  genSumFill:['不缺料 · 投入区容量 {c}','Always full · buffer {c}','不缺料 · 投入區容量 {c}'], genSum:['{m} · 每 {i}s 到 {b} 颗 · {r} pcs/h','{m} · {b} pcs every {i}s · {r} pcs/h','{m} · 每 {i}s 到 {b} 顆 · {r} pcs/h'],
+  gStatHi:['投入速率 {r} pcs/h 高于线体产能 {u} pcs/h：投入区会堆满，发生器被阻塞。','Arrival rate {r} pcs/h is above line capacity {u} pcs/h: the input buffer fills and the source is blocked.','投入速率 {r} pcs/h 高於線體產能 {u} pcs/h：投入區會堆滿，發生器被阻塞。'],
+  gStatLo:['投入速率 {r} pcs/h 低于线体产能 {u} pcs/h：产线会缺料，实际产出约等于投入速率。','Arrival rate {r} pcs/h is below line capacity {u} pcs/h: the line starves and output ≈ arrival rate.','投入速率 {r} pcs/h 低於線體產能 {u} pcs/h：產線會缺料，實際產出約等於投入速率。'],
+  gStatEq:['投入速率 {r} pcs/h 与线体产能 {u} pcs/h 相当。','Arrival rate {r} pcs/h matches line capacity {u} pcs/h.','投入速率 {r} pcs/h 與線體產能 {u} pcs/h 相當。'],
+  gStatFill:['不缺料模式：投入区随时补满，测的是线体最大产能。','Always-full mode: the input buffer is kept full, so this shows maximum line capacity.','不缺料模式：投入區隨時補滿，測的是線體最大產能。'],
+  gSrcStat:['已投入 {a} pcs · 发生器阻塞 {b}% 时间','Arrived {a} pcs · source blocked {b}% of the time','已投入 {a} pcs · 發生器阻塞 {b}% 時間'],
+  kTheo:['理论 UPH','Theoretical UPH','理論 UPH'], kAct:['实际 UPH（近 60s）','Actual UPH (last 60s)','實際 UPH（近 60s）'], kArr:['投入速率 pcs/h','Arrival rate pcs/h','投入速率 pcs/h'], kWip:['在制品 WIP','WIP','在製品 WIP'],
+  thUtil:['忙碌 / 阻塞 / 缺料 %','Busy / blocked / starved %','忙碌 / 阻塞 / 缺料 %'], uBusy:['加工中','Processing','加工中'], uBlk:['下站堵塞','Blocked by next','下站堵塞'], uIdle:['当站缺料','Starved','當站缺料'], utilLbl:['状态 %','State %','狀態 %'], kLine:['线体 UPH','Line UPH','線體 UPH'], kBal:['设备间平衡率','Line balance','設備間平衡率'], kEq:['设备 / 工站','Equipment / stages','設備 / 工站'],
   formula:['工序 UPH = 3600 ÷ CT × UnitCount × Stage<br>设备 UPH = 设备内最慢工序；线体 UPH = 最慢设备<br>等效 CT = CT ÷ (UnitCount × Stage)，s/pcs<br>平衡率 = Σ等效CT ÷ (最大等效CT × 数量)',
-           'Seq UPH = 3600 ÷ CT × UnitCount × Stage<br>Equipment UPH = slowest seq inside; Line UPH = slowest equipment<br>Eff. CT = CT ÷ (UnitCount × Stage), s/pcs<br>Balance = ΣEff. CT ÷ (max Eff. CT × count)']
+           'Seq UPH = 3600 ÷ CT × UnitCount × Stage<br>Equipment UPH = slowest seq inside; Line UPH = slowest equipment<br>Eff. CT = CT ÷ (UnitCount × Stage), s/pcs<br>Balance = ΣEff. CT ÷ (max Eff. CT × count)',
+           '工序 UPH = 3600 ÷ CT × UnitCount × Stage<br>設備 UPH = 設備內最慢工序；線體 UPH = 最慢設備<br>等效 CT = CT ÷ (UnitCount × Stage)，s/pcs<br>平衡率 = Σ等效CT ÷ (最大等效CT × 數量)']
 };
-let lang='zh';try{const s=localStorage.getItem('cfx-lang');if(s==='en'||s==='zh')lang=s;}catch(e){}
+let lang='zh';try{const s=localStorage.getItem('cfx-lang');if(s==='en'||s==='zh'||s==='tw')lang=s;}catch(e){}
 const subs=[];
-function t(k,v){const e=D[k];let s=e?e[lang==='en'?1:0]:k;if(v)s=s.replace(/\{(\w+)\}/g,(m,x)=>v[x]!==undefined?v[x]:m);return s;}
+function t(k,v){const e=D[k];let s=e?(e[{zh:0,en:1,tw:2}[lang]]??e[0]):k;if(v)s=s.replace(/\{(\w+)\}/g,(m,x)=>v[x]!==undefined?v[x]:m);return s;}
 function applyStatic(){document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=t(el.dataset.i18n);});
-  document.documentElement.lang=lang==='en'?'en':'zh-CN';
+  document.documentElement.lang={en:'en',zh:'zh-CN',tw:'zh-TW'}[lang];
   document.querySelectorAll('.langseg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===lang)));}
 function set(l){if(l===lang)return;lang=l;try{localStorage.setItem('cfx-lang',l);}catch(e){}applyStatic();subs.forEach(f=>{try{f(l);}catch(e){}});}
 document.querySelectorAll('.langseg button').forEach(b=>b.onclick=()=>set(b.dataset.lang));
@@ -485,6 +486,25 @@ zh:{
     '**并行工站共用 StageSequence。**官方定义 StageSequence 是「在设备里的顺序」，制程相同的并行工站报同一个值，用 StageName 区分。',
     '**WorkStageStarted / WorkStageCompleted 只带 TransactionID 和 Stage。**同一托盘换下一道工序只报 WSS / WSC，不会再报 WS；并行工站放的是不同托盘，各自一笔 TransactionID。'
   ]},
+tw:{
+  title:'設備 · 工序 · 工站 投料動畫',
+  intro:'一台**設備**內有多道 **Sequence（工序）**前後串聯，\n每道工序可有多個 **Stage（工站）**並行，用來平衡產能。\n設備每處理一次產生 1 筆 **TransactionID**，包含 **UnitCount** 顆產品。',
+  cfxTitle:'CFX 定義說明：UnitsArrived · WorkStarted · WorkStageStarted · WorkStageCompleted · WorkCompleted · UnitsDeparted',
+  cfxFlow:'UnitsArrived（到達）→ WorkStarted（TransactionID 開始）→ WorkStageStarted（工站開始）→ WorkStageCompleted（工站完成）→ WorkCompleted（TransactionID 結束）→ UnitsDeparted（離開）',
+  def1:'從 WorkStarted 到 WorkCompleted 這段加工使用同一個 TransactionID。',
+  def2:'這筆交易關聯的產品顆數。',
+  def3:'逐顆列出載具或拼板中的每個產品。',
+  notesTitle:'注意事項',
+  notes:[
+    '**算的是產品顆數，不是投入次數。**投入一片 4 連板或裝 4 顆的治具，實體只投入一次，UnitCount 仍是 4。PrimaryIdentifier / HermesIdentifier 填整片板或載具的 ID，Units 再逐顆列出。',
+    '**UnitCount 應等於 Units 列表的筆數**，每顆產品在 Units 中有自己的位置與識別碼。',
+    '**WorkCompleted 的 UnitCount 是選填。**只有 WorkStarted 當時拿不到識別資訊時才需補上，正常以 WorkStarted 為準。',
+    '**UnitsArrived / UnitsDeparted 沒有 TransactionID。**它們只記錄實體進出設備，要靠 PrimaryIdentifier / HermesIdentifier 和 WorkStarted / WorkCompleted 對上。',
+    '**只有 WorkStarted / WorkCompleted 的 UnitCount 綁定交易。**Arrived / Departed 的 UnitCount 只是實體顆數；同一托盤進出同一台設備時，四個訊息的數值應該一致。',
+    '**UnitsDeparted 不代表加工完成或良品。**官方註明不隱含任何加工資訊，結果要看 WorkCompleted 的 Result。',
+    '**並行工站共用 StageSequence。**官方定義 StageSequence 是「在設備裡的順序」，製程相同的並行工站報同一個值，用 StageName 區分。',
+    '**WorkStageStarted / WorkStageCompleted 只帶 TransactionID 和 Stage。**同一托盤換下一道工序只報 WSS / WSC，不會再報 WS；並行工站放的是不同托盤，各自一筆 TransactionID。'
+  ]},
 en:{
   title:'Equipment · Sequence · Stage Loading Animation',
   intro:'Each **equipment** runs several **Sequences** in series, and each sequence can have several parallel **Stages** to balance capacity.\nEach equipment cycle creates 1 **TransactionID** covering **UnitCount** units.',
@@ -507,16 +527,16 @@ en:{
 };
 const DEFAULT_H='7810c43f2e944d2fffcbc64ba2c2f79400572a1e4d2317b31987e2b6380c7c97';
 const KEYS=['title','intro','cfxTitle','cfxFlow','def1','def2','def3','notesTitle'];
-let all={zh:merge(null,'zh'),en:merge(null,'en')}, pwHash=null, unlocked=false, db=null;
+let all={zh:merge(null,'zh'),en:merge(null,'en'),tw:merge(null,'tw')}, pwHash=null, unlocked=false, db=null;
 const $=id=>document.getElementById(id);
-const L=()=>I18N.lang==='en'?'en':'zh';
+const L=()=>({en:'en',tw:'tw'})[I18N.lang]||'zh';
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function md(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/\r?\n/g,'<br>');}
 function merge(d,lang){const D=DEFS[lang],o=Object.assign({},D);if(d){KEYS.forEach(k=>{if(typeof d[k]==='string')o[k]=d[k];});if(Array.isArray(d.notes))o.notes=d.notes.filter(x=>typeof x==='string');}return o;}
 // stored shape {zh:{...},en:{...}}; older single-language docs are treated as Chinese
-function load(d){if(!d)return;if(d.zh||d.en){all={zh:merge(d.zh,'zh'),en:merge(d.en,'en')};}else{all={zh:merge(d,'zh'),en:all.en};}}
-function raw(){return {zh:all.zh,en:all.en};}
+function load(d){if(!d)return;if(d.zh||d.en||d.tw){all={zh:merge(d.zh,'zh'),en:merge(d.en,'en'),tw:merge(d.tw,'tw')};}else{all={zh:merge(d,'zh'),en:all.en,tw:all.tw};}}
+function raw(){return {zh:all.zh,en:all.en,tw:all.tw};}
 function apply(){const c=all[L()];
   $('cfgTitle').innerHTML=md(c.title);$('cfgIntro').innerHTML=md(c.intro);
   $('cfgCfxTitle').innerHTML=md(c.cfxTitle);$('cfgFlow').innerHTML=md(c.cfxFlow);
