@@ -141,6 +141,29 @@ table.cmp{min-width:1180px;font-size:12px;line-height:1.6}
 .cmp thead th:first-child{width:10%}
 .cmp tbody th{font:600 12px var(--mono);color:var(--fg);background:var(--panel)}
 .cmp q{color:var(--muted);font-style:italic}
+.fstrip{display:flex;align-items:stretch;gap:4px;overflow-x:auto;padding-bottom:2px}
+.fstep{flex:1 1 0;min-width:96px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;border:1px solid var(--line);border-top:3px solid var(--c);border-radius:4px;background:var(--bg);text-align:center}
+.fstep .ico{width:22px;height:22px;fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fstep b{font-size:13px}.fstep small{font:11px var(--mono);color:var(--muted)}
+.farr{align-self:center;color:var(--muted)}
+.txspan{margin:-6px 0 0;padding:0 calc((100% - 32px)/6 * .5);}
+.txspan span{display:block;margin:0 calc(100%/6 * 1) ;border:1px dashed var(--ev-ws);border-top:0;border-radius:0 0 6px 6px;text-align:center;font-size:12px;color:var(--ev-ws);padding:2px 0 3px}
+.mxbar{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.mxleg{font-size:12px;color:var(--muted)}
+.origtog{margin-left:auto;font-size:12px;color:var(--muted);display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+table.cmp.mx{min-width:760px}
+.cmp.mx thead th{width:auto;text-align:center}
+.cmp.mx td{text-align:center}
+.mk{font-size:14px;line-height:1}.mk.y{color:var(--accent)}.mk.n{color:var(--line)}
+.orig{display:none;text-align:left;margin-top:4px;font-size:11px}
+#mxWrap.show .orig,.stgcards.show .orig{display:block}
+.stgcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.stgcards{grid-template-columns:1fr}}
+.stgc{border:1px solid var(--line);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.stgc code{font-weight:600;color:var(--accent)}
+.stgc .orig q{color:var(--muted);font-style:italic}
+.stgex{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.stgex code{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:1px 6px;color:var(--fg)}
 table.cmp.stg{min-width:760px}
 .cmp.stg thead th{width:auto}
 .cmp.stg thead th:first-child{width:14%}
@@ -295,33 +318,27 @@ tr.eqrow td{background:var(--panel)}
   <details class="box cfx" open>
     <summary id="cfgCfxTitle">CFX 讯息定义（UA → WS → WSS → WSC → WC → UD）</summary>
     <div class="cfx-wrap">
-      <div class="flow" id="cfgFlow"></div>
-      <h3 data-i18n="hCmp">官方定义对照（CFX.Production）</h3>
-      <div class="cmpwrap"><table class="cmp">
-        <thead><tr><th></th><th>UnitsArrived</th><th>WorkStarted</th><th>WorkStageStarted</th><th>WorkStageCompleted</th><th>WorkCompleted</th><th>UnitsDeparted</th></tr></thead>
-        <tbody>
-          <tr><th data-i18n="rWhen"></th><td><q>Sent when production units physically arrives at a process endpoint, prior to any work or other activity commencing.</q><br><span data-i18n="aWhen"></span></td><td><span class="na" data-i18n="wsNoDesc"></span><br><span data-i18n="wsWhen"></span></td><td><q>Sent by a process endpoint when the work-stage for a unit or group of units starts</q><br><span data-i18n="ssWhen"></span></td><td><q>Sent by a process endpoint to indicate that a stage has been completed.</q><br><span data-i18n="scWhen"></span></td><td><q>Sent by a process endpoint when all work has been completed at a process endpoint.</q><br><span data-i18n="cWhen"></span></td><td><q>Sent by a process endpoint when units physically depart from a process endpoint. This does not imply any information about any activity that may have taken place.</q><br><span data-i18n="dWhen"></span></td></tr>
-          <tr><th>TransactionID</th><td><span class="na" data-i18n="na"></span></td><td><q>Transaction ID used to attach events and data during subsequent processing, until WorkCompleted</q><br><span id="cfgDef1"></span></td><td><q>Related Transaction ID specified previously by WorkStarted Message</q><br><span data-i18n="cTx"></span></td><td><q>Related Transaction ID specified previously by WorkStarted Message</q><br><span data-i18n="cTx"></span></td><td><q>Related Transaction ID specified previously by WorkStarted Message.</q><br><span data-i18n="cTx"></span></td><td><span class="na" data-i18n="na"></span></td></tr>
-          <tr><th>Stage</th><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><q>The stage name or number</q><br><span data-i18n="stInfo"></span></td><td><q>The stage name or number</q><br><span data-i18n="stInfo"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td></tr>
-          <tr><th>UnitCount</th><td><q>The number of individual production units</q><br><span data-i18n="aUc"></span></td><td><q>The number of individual production units associated with this transaction. May be more than 1 in the case of a carrier or panel of multiple PCB's.</q><br><span id="cfgDef2"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="opt" data-i18n="opt"></span> <span data-i18n="cUc"></span></td><td><q>The number of individual production units</q><br><span data-i18n="dUc"></span></td></tr>
-          <tr><th>Units</th><td><span class="opt" data-i18n="opt"></span> <q>An optional list of structures that identify each specific instance of production unit that arrived (if known).</q><br><span data-i18n="aUnits"></span></td><td><q>Data that identifies each specific instance of production unit with a carrier or panel.</q><br><span id="cfgDef3"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="opt" data-i18n="opt"></span> <span data-i18n="cUnits"></span></td><td><span class="opt" data-i18n="opt"></span> <q>An optional list of structures that identify each specific instance of production unit that arrived (if known).</q><br><span data-i18n="dUnits"></span></td></tr>
-          <tr><th>Primary / Hermes Identifier</th><td><span data-i18n="yes"></span></td><td><span data-i18n="yes"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="opt" data-i18n="opt"></span> <span data-i18n="yes"></span></td><td><span data-i18n="yes"></span></td></tr>
-          <tr><th>Lane</th><td><q>Lane identifier. Null if no specific lane</q></td><td><q>Lane identifier. Null if no specific lane</q></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><q>Lane identifier. Null if no specific lane</q></td></tr>
-          <tr><th>Result</th><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><q>An enumeration indicating the overall result of the Work transaction</q><br><span data-i18n="scRes"></span></td><td><q>An enumeration indicating the overall result of the work transaction.</q></td><td><span class="na" data-i18n="na"></span></td></tr>
-          <tr><th>PerformanceImpacts</th><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span class="na" data-i18n="na"></span></td><td><span data-i18n="perf"></span></td><td><span data-i18n="perf"></span></td><td><span class="na" data-i18n="na"></span></td></tr>
-        </tbody>
-      </table></div>
-      <h3 data-i18n="hStage">Stage 结构定义（CFX.Structures.Stage）</h3>
-      <div class="cmpwrap"><table class="cmp stg">
-        <thead><tr><th></th><th data-i18n="sdOff">官方原文</th><th data-i18n="sdMean">说明</th><th data-i18n="sdEx">本页 Machine - 1 的报法</th></tr></thead>
-        <tbody>
-          <tr><th>Stage</th><td><q>A data structure that represents a work area or step within a production related endpoint through which production units flow</q></td><td><span data-i18n="sdCls"></span></td><td><code>Seq1 / S1、Seq1 / S2、Seq2 / S1</code></td></tr>
-          <tr><th>StageSequence</th><td><q>Sequence of this stage in the machine</q></td><td><span data-i18n="sdSeq"></span></td><td><code>1、1、2</code></td></tr>
-          <tr><th>StageName</th><td><q>A friendly name for this stage</q></td><td><span data-i18n="sdName"></span></td><td><code>Seq1-S1、Seq1-S2、Seq2-S1</code></td></tr>
-          <tr><th>StageType</th><td><q>An enumeration indicating the purpose of this particular stage</q></td><td><span data-i18n="sdType"></span></td><td><code>Work</code></td></tr>
-        </tbody>
-      </table></div>
-      <p class="stgnote" data-i18n="sdNote"></p>
+      <div class="flow" id="cfgFlow" hidden></div>
+      <div class="fstrip"><div class="fstep" style="--c:var(--ev-ua)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h11M10 8l4 4-4 4"/><path d="M15 4h5v16h-5"/></svg><span class="evc" style="background:var(--ev-ua)">UA</span><b data-i18n="fl_ua"></b><small>UnitsArrived</small></div><span class="farr">→</span><div class="fstep" style="--c:var(--ev-ws)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg><span class="evc" style="background:var(--ev-ws)">WS</span><b data-i18n="fl_ws"></b><small>WorkStarted</small></div><span class="farr">→</span><div class="fstep" style="--c:var(--ev-ss)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M10 8l6 4-6 4z"/></svg><span class="evc" style="background:var(--ev-ss)">WSS</span><b data-i18n="fl_ss"></b><small>WorkStageStarted</small></div><span class="farr">→</span><div class="fstep" style="--c:var(--ev-sc)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span class="evc" style="background:var(--ev-sc)">WSC</span><b data-i18n="fl_sc"></b><small>WorkStageCompleted</small></div><span class="farr">→</span><div class="fstep" style="--c:var(--ev-wc)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg><span class="evc" style="background:var(--ev-wc)">WC</span><b data-i18n="fl_wc"></b><small>WorkCompleted</small></div><span class="farr">→</span><div class="fstep" style="--c:var(--ev-ud)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v16h5"/><path d="M10 12h11M17 8l4 4-4 4"/></svg><span class="evc" style="background:var(--ev-ud)">UD</span><b data-i18n="fl_ud"></b><small>UnitsDeparted</small></div></div>
+      <div class="txspan"><span data-i18n="txSpan"></span></div>
+      <div class="mxbar"><h3 data-i18n="mxTitle"></h3><span class="mxleg" data-i18n="mxLeg"></span><label class="origtog"><input type="checkbox" id="origTog"> <span data-i18n="showOrig"></span></label></div>
+      <div class="cmpwrap" id="mxWrap"><table class="cmp mx"><thead><tr><th></th><th><span class="evc" style="background:var(--ev-ua)">UA</span></th><th><span class="evc" style="background:var(--ev-ws)">WS</span></th><th><span class="evc" style="background:var(--ev-ss)">WSS</span></th><th><span class="evc" style="background:var(--ev-sc)">WSC</span></th><th><span class="evc" style="background:var(--ev-wc)">WC</span></th><th><span class="evc" style="background:var(--ev-ud)">UD</span></th></tr></thead><tbody>
+<tr><th data-i18n="mxWhen"></th><td><span data-i18n="w_ua"></span><div class="orig"><q>Sent when production units physically arrives at a process endpoint, prior to any work or other activity commencing.</q></div></td><td><span data-i18n="w_ws"></span><div class="orig"><span class="na" data-i18n="wsNoDesc"></span></div></td><td><span data-i18n="w_wss"></span><div class="orig"><q>Sent by a process endpoint when the work-stage for a unit or group of units starts</q></div></td><td><span data-i18n="w_wsc"></span><div class="orig"><q>Sent by a process endpoint to indicate that a stage has been completed.</q></div></td><td><span data-i18n="w_wc"></span><div class="orig"><q>Sent by a process endpoint when all work has been completed at a process endpoint.</q></div></td><td><span data-i18n="w_ud"></span><div class="orig"><q>Sent by a process endpoint when units physically depart from a process endpoint. This does not imply any information about any activity that may have taken place.</q></div></td></tr>
+<tr><th data-i18n="mxTx"></th><td><span class="mk n">–</span></td><td><span data-i18n="tx_new"></span><div class="orig"><q>Transaction ID used to attach events and data during subsequent processing, until WorkCompleted</q><br><span id="cfgDef1"></span></div></td><td><span data-i18n="tx_same"></span><div class="orig"><q>Related Transaction ID specified previously by WorkStarted Message</q></div></td><td><span data-i18n="tx_same"></span><div class="orig"><q>Related Transaction ID specified previously by WorkStarted Message</q></div></td><td><span data-i18n="tx_same"></span><div class="orig"><q>Related Transaction ID specified previously by WorkStarted Message.</q></div></td><td><span class="mk n">–</span></td></tr>
+<tr><th data-i18n="mxStage"></th><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td><td><span class="mk y">●</span><div class="orig"><q>The stage name or number</q></div></td><td><span class="mk y">●</span><div class="orig"><q>The stage name or number</q></div></td><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td></tr>
+<tr><th data-i18n="mxUnits"></th><td><span class="mk y">●</span><div class="orig"><q>The number of individual production units</q><br><q>An optional list of structures that identify each specific instance of production unit that arrived (if known).</q></div></td><td><span class="mk y">●</span><div class="orig"><q>The number of individual production units associated with this transaction. May be more than 1 in the case of a carrier or panel of multiple PCB's.</q><br><span id="cfgDef2"></span><br><q>Data that identifies each specific instance of production unit with a carrier or panel.</q><br><span id="cfgDef3"></span></div></td><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td><td><span class="opt" data-i18n="opt"></span><div class="orig"><span data-i18n="cUc"></span></div></td><td><span class="mk y">●</span><div class="orig"><q>The number of individual production units</q><br><span data-i18n="dUnits"></span></div></td></tr>
+<tr><th data-i18n="mxId"></th><td><span class="mk y">●</span></td><td><span class="mk y">●</span></td><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td><td><span class="opt" data-i18n="opt"></span></td><td><span class="mk y">●</span></td></tr>
+<tr><th data-i18n="mxLane"></th><td><span class="mk y">●</span><div class="orig"><q>Lane identifier. Null if no specific lane</q></div></td><td><span class="mk y">●</span><div class="orig"><q>Lane identifier. Null if no specific lane</q></div></td><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td><td><span class="mk y">●</span><div class="orig"><q>Lane identifier. Null if no specific lane</q></div></td></tr>
+<tr><th data-i18n="mxRes"></th><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td><td><span class="mk y">●</span><div class="orig"><q>An enumeration indicating the overall result of the Work transaction</q></div></td><td><span class="mk y">●</span><div class="orig"><q>An enumeration indicating the overall result of the work transaction.</q></div></td><td><span class="mk n">–</span></td></tr>
+<tr><th data-i18n="mxPerf"></th><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td><td><span class="mk n">–</span></td><td><span class="mk y">●</span><div class="orig"><span data-i18n="perf"></span></div></td><td><span class="mk y">●</span><div class="orig"><span data-i18n="perf"></span></div></td><td><span class="mk n">–</span></td></tr>
+</tbody></table></div>
+      <h3 data-i18n="stTitle"></h3>
+      <div class="stgcards">
+        <div class="stgc"><code>StageSequence</code><span data-i18n="sq_seq"></span><div class="orig"><q>Sequence of this stage in the machine</q></div></div>
+        <div class="stgc"><code>StageName</code><span data-i18n="sq_name"></span><div class="orig"><q>A friendly name for this stage</q></div></div>
+        <div class="stgc"><code>StageType</code><span data-i18n="sq_type"></span><div class="orig"><q>An enumeration indicating the purpose of this particular stage</q></div></div>
+      </div>
+      <div class="stgex"><span data-i18n="sq_ex"></span> <code>Seq1 / S1 → 1 · Seq1-S1</code> <code>Seq1 / S2 → 1 · Seq1-S2</code> <code>Seq2 / S1 → 2 · Seq2-S1</code></div>
       <div class="cfx-body">
         <div>
           <h3 id="cfgNotesTitle"></h3>
@@ -364,7 +381,7 @@ tr.eqrow td{background:var(--panel)}
       <div class="fld"><label for="f_intro" data-i18n="fIntro"></label><textarea id="f_intro" rows="4"></textarea></div>
       <fieldset><legend data-i18n="fCfx"></legend>
         <div class="fld"><label for="f_cfxTitle" data-i18n="fCfxTitle"></label><input id="f_cfxTitle"></div>
-        <div class="fld"><label for="f_cfxFlow" data-i18n="fFlow"></label><textarea id="f_cfxFlow" rows="2"></textarea></div>
+        <div class="fld" hidden><label for="f_cfxFlow" data-i18n="fFlow"></label><textarea id="f_cfxFlow" rows="2"></textarea></div>
         <div class="fld"><label for="f_def1" data-i18n="fDef1"></label><textarea id="f_def1" rows="2"></textarea></div>
         <div class="fld"><label for="f_def2" data-i18n="fDef2"></label><textarea id="f_def2" rows="2"></textarea></div>
         <div class="fld"><label for="f_def3" data-i18n="fDef3"></label><textarea id="f_def3" rows="2"></textarea></div>
@@ -403,6 +420,37 @@ const D={
   sdName:['友善名称；官方未规定唯一，设备端应固定且不重复。','A friendly name; not defined as unique, so the machine should keep it fixed and distinct.','友善名稱；官方未規定唯一，設備端應固定且不重複。'],
   sdType:['这个 Stage 的用途，例如 Work。','The purpose of the stage, e.g. Work.','這個 Stage 的用途，例如 Work。'],
   sdNote:['结论：S1、S2 只是为了增加产量的并行工站，StageSequence 都报 1，用 StageName 区分；接收端（MES、看板）要用 StageSequence + StageName 一起辨识工站。官方 Stage 定义见 CFX 2.0 文件。','In short: S1 and S2 are parallel stations added for capacity, so both report StageSequence 1 and differ by StageName; receivers (MES, dashboards) should identify a station by StageSequence + StageName. Stage definition from the CFX 2.0 documentation.','結論：S1、S2 只是為了增加產量的並行工站，StageSequence 都報 1，用 StageName 區分；接收端（MES、看板）要用 StageSequence + StageName 一起辨識工站。官方 Stage 定義見 CFX 2.0 文件。'],
+  fl_ua:['产品进入','Units in','產品進入'],
+  fl_ws:['开始交易','Tx starts','開始交易'],
+  fl_ss:['工站开始','Stage starts','工站開始'],
+  fl_sc:['工站完成','Stage done','工站完成'],
+  fl_wc:['结束交易','Tx ends','結束交易'],
+  fl_ud:['产品离开','Units out','產品離開'],
+  txSpan:['WS 到 WC 之间共用同一个 TransactionID','WS through WC share one TransactionID','WS 到 WC 之間共用同一個 TransactionID'],
+  mxTitle:['一表看懂：每个讯息带哪些栏位','At a glance: fields in each message','一表看懂：每個訊息帶哪些欄位'],
+  mxLeg:['● 有　– 无','● present　– absent','● 有　– 無'],
+  showOrig:['显示官方原文','Show official text','顯示官方原文'],
+  mxWhen:['什么时候报','When sent','什麼時候報'],
+  mxTx:['TransactionID','TransactionID','TransactionID'],
+  mxStage:['Stage（工站）','Stage','Stage（工站）'],
+  mxUnits:['UnitCount / Units','UnitCount / Units','UnitCount / Units'],
+  mxId:['托盘 ID','Carrier ID','托盤 ID'],
+  mxLane:['Lane','Lane','Lane'],
+  mxRes:['Result（结果）','Result','Result（結果）'],
+  mxPerf:['PerformanceImpacts','PerformanceImpacts','PerformanceImpacts'],
+  w_ua:['产品进入设备，加工前','Units arrive, before work','產品進入設備，加工前'],
+  w_ws:['开始加工','Work starts','開始加工'],
+  w_wss:['某工序的工站开始','A stage starts','某工序的工站開始'],
+  w_wsc:['该工站完成','That stage finishes','該工站完成'],
+  w_wc:['设备上全部完成','All work done','設備上全部完成'],
+  w_ud:['产品离开（不代表良品）','Units leave (not pass/fail)','產品離開（不代表良品）'],
+  tx_new:['产生','Created','產生'],
+  tx_same:['沿用','Same','沿用'],
+  stTitle:['Stage 结构：怎么表示是哪个工站','Stage structure: which station it is','Stage 結構：怎麼表示是哪個工站'],
+  sq_seq:['第几道工序；并行工站共用同一个值','Which step; parallel stations share the value','第幾道工序；並行工站共用同一個值'],
+  sq_name:['哪一个工站；要固定、不重复','Which station; keep fixed and unique','哪一個工站；要固定、不重複'],
+  sq_type:['用途，例如 Work','Purpose, e.g. Work','用途，例如 Work'],
+  sq_ex:['本页 Machine - 1 的报法：','How Machine - 1 reports here:','本頁 Machine - 1 的報法：'],
   step:['下一步','Step','下一步'], back:['上一步','Back','上一步'], stepMore:['（同一时刻共 {n} 则，完整内容见讯息纪录）','({n} messages at the same moment; see the message log)','（同一時刻共 {n} 則，完整內容見訊息紀錄）'], stepInfo:['第 {n} 步 · {t}s · {eq} · {m} {tx}','Step {n} · {t}s · {eq} · {m} {tx}','第 {n} 步 · {t}s · {eq} · {m} {tx}'], stepHint:['按「下一步」会播放到下一个 CFX 讯息发出后暂停。','Step plays until the next CFX message is sent, then pauses.','按「下一步」會播放到下一個 CFX 訊息發出後暫停。'],
   hCap:['产能与产出','Capacity & output','產能與產出'], thEq:['设备 / 工序','Equipment / Seq','設備 / 工序'], thEff:['等效CT','Eff. CT','等效CT'], thBal:['内部平衡','Internal balance','內部平衡'],
   thTx:['TX 笔数','TX count','TX 筆數'], thOut:['产出 pcs','Output pcs','產出 pcs'], ftLine:['线体完成','Line output','線體完成'],
@@ -478,14 +526,12 @@ zh:{
   def3:'逐颗列出载具或拼板中的每个产品。',
   notesTitle:'注意事项',
   notes:[
-    '**算的是产品颗数，不是投入次数。**投入一片 4 连板或装 4 颗的治具，实体只投入一次，UnitCount 仍是 4。PrimaryIdentifier / HermesIdentifier 填整片板或载具的 ID，Units 再逐颗列出。',
-    '**UnitCount 应等于 Units 列表的笔数**，每颗产品在 Units 中有自己的位置与识别码。',
-    '**WorkCompleted 的 UnitCount 是选填。**只有 WorkStarted 当时拿不到识别资讯时才需补上，正常以 WorkStarted 为准。',
-    '**UnitsArrived / UnitsDeparted 没有 TransactionID。**它们只记录实体进出设备，要靠 PrimaryIdentifier / HermesIdentifier 和 WorkStarted / WorkCompleted 对上。',
-    '**只有 WorkStarted / WorkCompleted 的 UnitCount 绑定交易。**Arrived / Departed 的 UnitCount 只是实体颗数；同一托盘进出同一台设备时，四个讯息的数值应该一致。',
-    '**UnitsDeparted 不代表加工完成或良品。**官方注明不隐含任何加工资讯，结果要看 WorkCompleted 的 Result。',
-    '**并行工站共用 StageSequence。**官方定义 StageSequence 是「在设备里的顺序」，制程相同的并行工站报同一个值，用 StageName 区分。',
-    '**WorkStageStarted / WorkStageCompleted 只带 TransactionID 和 Stage。**同一托盘换下一道工序只报 WSS / WSC，不会再报 WS；并行工站放的是不同托盘，各自一笔 TransactionID。'
+    '**UnitCount 算颗数，不算次数。**一片 4 连板投入一次，UnitCount = 4，Units 逐颗列出。',
+    '**TransactionID 只在 WS～WC 之间。**UA / UD 没有，靠托盘 ID（PrimaryIdentifier）对应。',
+    '**同一托盘换工序不再报 WS。**只报 WSS / WSC，TransactionID 不变。',
+    '**并行工站 = 不同托盘。**各自一笔 TransactionID；StageSequence 相同，用 StageName 区分。',
+    '**UD 不代表良品。**加工结果看 WC 的 Result。',
+    '**WC 的 UnitCount / Units 选填。**通常以 WS 为准。'
   ]},
 tw:{
   title:'設備 · 工序 · 工站 投料動畫',
@@ -497,14 +543,12 @@ tw:{
   def3:'逐顆列出載具或拼板中的每個產品。',
   notesTitle:'注意事項',
   notes:[
-    '**算的是產品顆數，不是投入次數。**投入一片 4 連板或裝 4 顆的治具，實體只投入一次，UnitCount 仍是 4。PrimaryIdentifier / HermesIdentifier 填整片板或載具的 ID，Units 再逐顆列出。',
-    '**UnitCount 應等於 Units 列表的筆數**，每顆產品在 Units 中有自己的位置與識別碼。',
-    '**WorkCompleted 的 UnitCount 是選填。**只有 WorkStarted 當時拿不到識別資訊時才需補上，正常以 WorkStarted 為準。',
-    '**UnitsArrived / UnitsDeparted 沒有 TransactionID。**它們只記錄實體進出設備，要靠 PrimaryIdentifier / HermesIdentifier 和 WorkStarted / WorkCompleted 對上。',
-    '**只有 WorkStarted / WorkCompleted 的 UnitCount 綁定交易。**Arrived / Departed 的 UnitCount 只是實體顆數；同一托盤進出同一台設備時，四個訊息的數值應該一致。',
-    '**UnitsDeparted 不代表加工完成或良品。**官方註明不隱含任何加工資訊，結果要看 WorkCompleted 的 Result。',
-    '**並行工站共用 StageSequence。**官方定義 StageSequence 是「在設備裡的順序」，製程相同的並行工站報同一個值，用 StageName 區分。',
-    '**WorkStageStarted / WorkStageCompleted 只帶 TransactionID 和 Stage。**同一托盤換下一道工序只報 WSS / WSC，不會再報 WS；並行工站放的是不同托盤，各自一筆 TransactionID。'
+    '**UnitCount 算顆數，不算次數。**一片 4 連板投入一次，UnitCount = 4，Units 逐顆列出。',
+    '**TransactionID 只在 WS～WC 之間。**UA / UD 沒有，靠托盤 ID（PrimaryIdentifier）對應。',
+    '**同一托盤換工序不再報 WS。**只報 WSS / WSC，TransactionID 不變。',
+    '**並行工站 = 不同托盤。**各自一筆 TransactionID；StageSequence 相同，用 StageName 區分。',
+    '**UD 不代表良品。**加工結果看 WC 的 Result。',
+    '**WC 的 UnitCount / Units 選填。**通常以 WS 為準。'
   ]},
 en:{
   title:'Equipment · Sequence · Stage Loading Animation',
@@ -516,14 +560,12 @@ en:{
   def3:'Lists every unit in the carrier or panel.',
   notesTitle:'Notes',
   notes:[
-    '**It counts units, not loads.** A 4-up panel or a 4-unit fixture is loaded once, but UnitCount is still 4. PrimaryIdentifier / HermesIdentifier holds the panel or carrier ID; Units lists each unit.',
-    '**UnitCount should equal the number of entries in Units.** Each unit has its own position and identifier.',
-    '**UnitCount in WorkCompleted is optional.** It is only needed when identifiers were unknown at WorkStarted; normally WorkStarted is the reference.',
-    '**UnitsArrived / UnitsDeparted have no TransactionID.** They only record units physically entering and leaving; match them to WorkStarted / WorkCompleted by PrimaryIdentifier / HermesIdentifier.',
-    '**Only the UnitCount in WorkStarted / WorkCompleted is tied to a transaction.** In Arrived / Departed it is a physical count; for one tray through one equipment, all four values should match.',
-    '**UnitsDeparted does not mean the work finished or passed.** The official text says it implies nothing about activity; check Result in WorkCompleted.',
-    '**Parallel stations share StageSequence.** The official definition is the stage\'s order in the machine, so identical parallel stations report the same value and differ by StageName.',
-    '**WorkStageStarted / WorkStageCompleted carry only TransactionID and Stage.** A tray moving to the next stage reports only WSS / WSC, never a new WS; parallel stages hold different trays, each with its own TransactionID.'
+    '**UnitCount counts units, not loads.** A 4-up panel loaded once has UnitCount = 4; Units lists each one.',
+    '**TransactionID exists only from WS to WC.** UA / UD have none; match them by carrier ID (PrimaryIdentifier).',
+    '**No new WS when a tray changes stage.** Only WSS / WSC; the TransactionID stays the same.',
+    '**Parallel stations = different trays.** Each has its own TransactionID; same StageSequence, different StageName.',
+    '**UD does not mean pass.** Check Result in WC.',
+    '**UnitCount / Units in WC are optional.** WS is normally the reference.'
   ]}
 };
 const DEFAULT_H='7810c43f2e944d2fffcbc64ba2c2f79400572a1e4d2317b31987e2b6380c7c97';
@@ -885,6 +927,7 @@ function drawTL(){const c=tctx,now=S.t,win=30,L0=78,w=TW-L0-12,X=t=>L0+(t-(now-w
 function buildEvUI(){const lg=$('evLegend');lg.innerHTML=Object.keys(EVT).map(k=>`<span><span class="evc" style="background:var(--ev-${k.toLowerCase()})">${CODE[k]}</span>${EVT[k]}</span>`).join('');
   const f=$('evFilter');f.innerHTML='';Object.keys(EVT).forEach(k=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed',String(!!evOn[k]));
     b.innerHTML=`<span class="evc" style="background:var(--ev-${k.toLowerCase()})">${CODE[k]}</span>${EVT[k]}`;b.onclick=()=>{evOn[k]=evOn[k]?0:1;b.setAttribute('aria-pressed',String(!!evOn[k]));logDirty=true;renderLog();};f.appendChild(b);});}
+$('origTog').addEventListener('change',e=>{$('mxWrap').classList.toggle('show',e.target.checked);document.querySelector('.stgcards').classList.toggle('show',e.target.checked);});
 $('log').addEventListener('click',e=>{const li=e.target.closest('li[data-i]');if(!li)return;selEv=EV.find(x=>x.id===+li.dataset.i)||null;logDirty=true;renderLog();renderJson();});
 function msgBody(ev){const units=ev.units.map((u,i)=>({UnitIdentifier:u,PositionNumber:i+1,PositionName:'Pos'+(i+1)}));const st={StageSequence:ev.seq,StageName:'Seq'+ev.seq+'-S'+ev.stage,StageType:'Work'};
   switch(ev.type){case 'UA':case 'UD':return {Lane:null,PrimaryIdentifier:ev.car,UnitCount:ev.uc,Units:units};
