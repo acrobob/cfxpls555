@@ -244,6 +244,66 @@ summary .evc{margin:0 2px;vertical-align:1px}
 tr.sub td{color:var(--muted)}
 tr.sub td:first-child{padding-left:26px}
 tr.eqrow td{background:var(--panel)}
+.mpager{display:none;align-items:center;gap:6px;padding:6px 2px 4px}
+.mpager.on{display:flex}
+.mpager .btn{height:34px;min-width:40px;padding:0 10px;font-size:16px;line-height:1}
+.mpager #mFit{font-size:13px;margin-left:auto}
+.mpager #mFit[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.mpname{font:600 13px var(--font);min-width:0;flex:0 1 auto;text-align:center;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mdots{display:flex;gap:4px}
+.mdots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.mdots i.on{background:var(--accent)}
+.canvas-wrap{-webkit-overflow-scrolling:touch;scroll-behavior:smooth;overscroll-behavior-x:contain}
+.canvas-wrap.fit canvas{width:100%!important;height:auto!important}
+/* ---------- phone ---------- */
+@media (max-width:640px){
+  body{padding-block:12px}
+  .wrap{gap:12px}
+  .hdr{flex-direction:column-reverse;gap:10px}
+  .hdr-act{align-self:stretch;justify-content:space-between}
+  h1{font-size:18px;line-height:1.35}
+  .sub{font-size:12.5px;line-height:1.65}
+  .sub br{display:none}
+  .eqcfg summary{flex-wrap:wrap;gap:2px 10px;padding:12px 14px}
+  .gstat,.txbar{padding:10px 14px}
+  .genbody{padding:4px 14px 12px}
+  .seqs{padding:12px 14px}.seqcard{width:100%;box-sizing:border-box}
+  .eqtabs{padding:12px 14px 0}
+  .stage{display:flex;flex-direction:column;padding:6px 8px 0}
+  .stage>.stepbar{order:0;margin:-6px -8px 6px;font-size:11.5px;line-height:1.6}
+  .stage>.mpager{order:1}
+  .stage>.canvas-wrap{order:2;margin:0 -8px;padding:0 8px}
+  .stage>.legend{order:3}
+  .stage>.tlwrap{order:4}
+  .stage>.controls{order:5;position:sticky;bottom:0;z-index:5;margin:8px -8px 0;border-radius:0 0 4px 4px;border-top:1px solid var(--line);border-bottom:0;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));gap:8px;flex-direction:column;align-items:stretch;box-shadow:0 -4px 12px rgba(0,0,0,.06)}
+  .stage>.controls .ctl{flex-direction:row;align-items:center;gap:10px}
+  .stage>.controls .ctl input[type=range]{flex:1;width:auto}
+  .stage>.controls .ctl label{white-space:nowrap}
+  .btns{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:6px;margin:0}
+  .btns .btn{height:42px;padding:0 4px;font-size:14px}
+  .legend{gap:4px 12px;font-size:11.5px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpis b{font-size:16px}
+  .formula{font-size:12px}
+  .evfilter{padding:8px 10px;gap:5px}
+  .evfilter button{font-size:11px;padding:3px 6px}
+  .log{height:auto;font-size:11px;line-height:17px}
+  .log li{height:48px;padding:6px 12px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .pjson{height:auto;flex:none;max-height:340px;font-size:11px}
+  .cfx summary{padding:12px 14px;line-height:1.9}
+  .cfx-wrap{padding:12px}
+  .fstrip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;overflow:visible}
+  .fstrip .farr{display:none}
+  .fstep{min-width:0;padding:8px 4px}
+  .fstep small{font-size:9.5px;overflow-wrap:anywhere}
+  .txspan{margin:0;padding:0}
+  .txspan span{margin:0;border-top:1px dashed var(--ev-ws);border-radius:4px;padding:4px 8px}
+  .origtog{margin-left:0}
+  .cmp.mx th:first-child{position:sticky;left:0;z-index:1;background:var(--panel);box-shadow:1px 0 0 var(--line);min-width:96px;max-width:110px;white-space:normal}
+  .cmp.mx tbody th{font-size:11px}
+  .dlg-foot .btn{height:38px}
+}
 </style>
 
 <div class="wrap">
@@ -285,7 +345,8 @@ tr.eqrow td{background:var(--panel)}
       <div class="btns"><button class="btn primary" id="play" type="button">暂停</button><button class="btn" id="backBtn" type="button" data-i18n="back" disabled>上一步</button><button class="btn" id="stepBtn" type="button" data-i18n="step">下一步</button><button class="btn" id="reset" type="button" data-i18n="reset">重置</button></div>
     </div>
     <div class="txbar stepbar" id="stepInfo"></div>
-    <div class="canvas-wrap"><canvas id="cv"></canvas></div>
+    <div class="mpager" id="mPager"><button class="btn" id="mPrev" type="button" aria-label="Previous">‹</button><span class="mpname" id="mName"></span><button class="btn" id="mNext" type="button" aria-label="Next">›</button><span class="mdots" id="mDots"></span><button class="btn" id="mFit" type="button" aria-pressed="false"></button></div>
+    <div class="canvas-wrap" id="cvWrap"><canvas id="cv"></canvas></div>
     <div class="legend">
       <span><i style="background:var(--unit)"></i><span data-i18n="lgUnit">产品</span></span>
       <span><i style="background:var(--unit-done)"></i><span data-i18n="lgDone">已完成</span></span>
@@ -454,7 +515,7 @@ const D={
   step:['下一步','Step','下一步'], back:['上一步','Back','上一步'], stepMore:['（同一时刻共 {n} 则，完整内容见讯息纪录）','({n} messages at the same moment; see the message log)','（同一時刻共 {n} 則，完整內容見訊息紀錄）'], stepInfo:['第 {n} 步 · {t}s · {eq} · {m} {tx}','Step {n} · {t}s · {eq} · {m} {tx}','第 {n} 步 · {t}s · {eq} · {m} {tx}'], stepHint:['按「下一步」会播放到下一个 CFX 讯息发出后暂停。','Step plays until the next CFX message is sent, then pauses.','按「下一步」會播放到下一個 CFX 訊息發出後暫停。'],
   hCap:['产能与产出','Capacity & output','產能與產出'], thEq:['设备 / 工序','Equipment / Seq','設備 / 工序'], thEff:['等效CT','Eff. CT','等效CT'], thBal:['内部平衡','Internal balance','內部平衡'],
   thTx:['TX 笔数','TX count','TX 筆數'], thOut:['产出 pcs','Output pcs','產出 pcs'], ftLine:['线体完成','Line output','線體完成'],
-  hLog:['CFX 讯息纪录（点选一笔可在右侧查看讯息内容）','CFX message log (click a row to view it on the right)','CFX 訊息紀錄（點選一筆可在右側查看訊息內容）'],
+  hLog:['CFX 讯息纪录（点选一笔查看讯息内容）','CFX message log (tap a row to view its message)','CFX 訊息紀錄（點選一筆查看訊息內容）'],
   logEmpty:['产品进入第一台设备后，这里会依时间列出 CFX 讯息。','CFX messages appear here once units enter the first equipment.','產品進入第一台設備後，這裡會依時間列出 CFX 訊息。'], tlTitle:['CFX 讯息时间轴（最近 30 秒）','CFX message timeline (last 30 s)','CFX 訊息時間軸（最近 30 秒）'], tlNow:['现在','now','現在'],
   hCmp:['官方定义对照（CFX.Production）','Official definitions (CFX.Production)','官方定義對照（CFX.Production）'], rWhen:['发送时机','When sent','發送時機'],
   aWhen:['产品实体到达设备，尚未开始加工。','Units physically arrive, before processing starts.','產品實體到達設備，尚未開始加工。'],
@@ -484,7 +545,7 @@ const D={
   eqSum:['{e} 台设备 · {s} 个工站','{e} equipment · {s} stages','{e} 台設備 · {s} 個工站'], cIn:['投入','In','投入'], cOut:['产出','Out','產出'], perLoad:['{n} pcs/次','{n} pcs/load','{n} pcs/次'],
   txRule:['设备处理一次 = 1 笔 TransactionID，包含该设备的 <b>UnitCount</b> 颗','1 equipment cycle = 1 TransactionID with that equipment\'s <b>UnitCount</b> units','設備處理一次 = 1 筆 TransactionID，包含該設備的 <b>UnitCount</b> 顆'], latest:['最新：','Latest: ','最新：'],
   jsonCmt:['// Machine - {e} · CFX.Production.{m}（示意）· {t}s','// Machine - {e} · CFX.Production.{m} (example) · {t}s','// Machine - {e} · CFX.Production.{m}（示意）· {t}s'], stageNote:['// WorkStageStarted / WorkStageCompleted 栏位为示意，未逐一核对官方页面','// WorkStageStarted / WorkStageCompleted fields are illustrative, not checked against the official page','// WorkStageStarted / WorkStageCompleted 欄位為示意，未逐一核對官方頁面'],
-  bottleneck:['瓶颈','Bottleneck','瓶頸'],
+  bottleneck:['瓶颈','Bottleneck','瓶頸'], mFit:['看全线','Whole line','看全線'], mZoom:['放大','Zoom in','放大'],
   genCfg:['投入发生器','Source (generator)','投入發生器'], gMode:['投入模式','Arrival mode','投入模式'], mFill:['不缺料','Always full','不缺料'], mFixed:['固定间隔','Fixed interval','固定間隔'], mExp:['随机间隔（指数）','Random (exponential)','隨機間隔（指數）'],
   gIat:['到达间隔','Inter-arrival time','到達間隔'], gBatch:['每次到达颗数','Units per arrival','每次到達顆數'], gCap:['投入区容量','Input buffer size','投入區容量'],
   genSumFill:['不缺料 · 投入区容量 {c}','Always full · buffer {c}','不缺料 · 投入區容量 {c}'], genSum:['{m} · 每 {i}s 到 {b} 颗 · {r} pcs/h','{m} · {b} pcs every {i}s · {r} pcs/h','{m} · 每 {i}s 到 {b} 顆 · {r} pcs/h'],
@@ -740,9 +801,26 @@ function restore(h){S.playing=false;S.stepTo=0;const c=structuredClone(h.st);
     FL[(ev.type==='SS'||ev.type==='SC')?ev.type+':'+k+':'+(ev.stage-1):ev.type+':'+ev.e]={age:0,type:ev.type};});
   logDirty=true;renderLog();renderJson();renderStats();$('stepInfo').innerHTML=h.info;$('play').textContent=T('play');updHist();}
 function stepDone(){S.playing=false;S.stepTo=0;$('play').textContent=T('play');const evs=EV.filter(x=>x.id>S.stepFrom),ev=evs[0];if(!ev)return;
-  selEv=ev;logDirty=true;renderLog();renderJson();renderStats();
+  selEv=ev;logDirty=true;renderLog();renderJson();renderStats();if(ev.e!==curM&&W>cvWrap.clientWidth+4)goMachine(ev.e);
   $('stepInfo').innerHTML=evs.map(x=>`<span class="evc" style="background:var(--ev-${x.type.toLowerCase()})">${CODE[x.type]}</span>`).join('')+' '+T('stepInfo',{n:ev.id,t:ev.t.toFixed(1),eq:T('eq')+(ev.e+1)+(ev.seq?' · Seq'+ev.seq+' / S'+ev.stage:''),m:EVT[ev.type],tx:ev.tx||ev.car||''})+(evs.length>1?' '+T('stepMore',{n:evs.length}):'');}
 $('reset').onclick=reset;
+
+/* ---------- phone: machine pager / whole-line view ---------- */
+const cvWrap=$('cvWrap');let fitMode=false,curM=0;
+function eqCenter(e){const b=G0.eqBox[e];return (b.x0+b.x1)/2;}
+function goMachine(e,smooth){if(fitMode||!G0)return;e=Math.max(0,Math.min(S.nEq-1,e));curM=e;
+  const x=e===0?0:eqCenter(e)-cvWrap.clientWidth/2;cvWrap.scrollTo({left:Math.max(0,x),behavior:smooth===false?'auto':'smooth'});updPager();}
+function nearM(){const c=cvWrap.scrollLeft+cvWrap.clientWidth/2;let best=0,bd=1e9;G0.eqBox.forEach((b,e)=>{const d=Math.abs((b.x0+b.x1)/2-c);if(d<bd){bd=d;best=e;}});return cvWrap.scrollLeft<4?0:best;}
+function updPager(){if(!G0)return;const over=W>cvWrap.clientWidth+4;$('mPager').classList.toggle('on',over||fitMode);
+  $('mFit').textContent=T(fitMode?'mZoom':'mFit');$('mFit').setAttribute('aria-pressed',fitMode);
+  ['mPrev','mNext'].forEach(id=>$(id).hidden=fitMode);$('mDots').hidden=fitMode;
+  $('mName').textContent=fitMode?T('eq')+'1 – '+S.nEq:T('eq')+(curM+1)+' / '+S.nEq;
+  $('mDots').innerHTML=Array.from({length:S.nEq},(_,i)=>'<i class="'+(i===curM?'on':'')+'"></i>').join('');
+  $('mPrev').disabled=curM<=0;$('mNext').disabled=curM>=S.nEq-1;}
+$('mPrev').onclick=()=>goMachine(nearM()-1);$('mNext').onclick=()=>goMachine(nearM()+1);
+$('mFit').onclick=()=>{fitMode=!fitMode;cvWrap.classList.toggle('fit',fitMode);if(!fitMode)goMachine(curM,false);updPager();};
+let scT=0;cvWrap.addEventListener('scroll',()=>{clearTimeout(scT);scT=setTimeout(()=>{const n=nearM();if(n!==curM){curM=n;updPager();}},80);},{passive:true});
+window.addEventListener('resize',updPager);I18N.on(updPager);
 
 /* ---------- geometry ---------- */
 let U=10;
@@ -752,7 +830,7 @@ function cap(e){return e===0?capIn():Math.max(2*ucOf(e),ucOf(e-1)+ucOf(e));}
 function layout(){
   cols=[];for(let e=0;e<S.nEq;e++){const q=S.eqs[e];for(let s=0;s<q.n;s++)cols.push({e,s,q:q.seqs[s],first:s===0,last:s===q.n-1});}
   const avail=cv.parentElement.clientWidth;U=avail<560?8:10;
-  const fixed=BW*2+GX*(S.nEq-1)+2*GIO+S.nEq*2*EP, minCol=trayW(4)+34;
+  const fixed=BW*2+GX*(S.nEq-1)+2*GIO+S.nEq*2*EP, minCol=avail<560?150:trayW(4)+34;
   const colW=Math.max(minCol,Math.min(170,(avail-fixed)/cols.length));
   W=Math.max(avail,fixed+colW*cols.length);
   const off=Math.max(0,W-(fixed+colW*cols.length))/2;
@@ -771,7 +849,7 @@ window.addEventListener('resize',()=>{resize();items.forEach(it=>{if(!it.path.le
 function reset(){S.t=0;FL={};S.stepTo=0;hist=[];hIdx=-1;S.freeRun=false;if($('backBtn'))$('backBtn').disabled=true;if($('stepInfo')){$('stepInfo').innerHTML='';$('stepInfo').dataset.hint=T('stepHint');}items=[];logItems=[];EV=[];POP=[];VRS=[];evN=0;carN=0;vidN=0;selEv=null;logDirty=true;laneBusy=S.eqs.slice(0,S.nEq).map(q=>new Array(Math.max(1,q.seqs.slice(0,q.n).reduce((a,s)=>a+s.stages,0))).fill(false));txN=0;unitN=0;outCount=0;outTx=0;lastSpawn=-9;
   resize();M=cols.map(c=>Array.from({length:c.q.stages},()=>({occ:null,busy:0,blk:0,idle:0})));nextArr=0;srcArrived=0;srcBlk=0;outTimes=[];
   eqStat=Array.from({length:S.nEq},()=>({tx:0}));bufs=[{units:[],incoming:0}];
-  renderStats();renderLog();renderTxbar(null);}
+  renderStats();renderLog();renderTxbar(null);if(typeof updPager==='function'){if(curM>=S.nEq)curM=0;updPager();}}
 
 /* ---------- simulation ---------- */
 function route(it,tx,ty,midX){it.path=[{x:midX,y:it.y},{x:midX,y:ty},{x:tx,y:ty}];}
